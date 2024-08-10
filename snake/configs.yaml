@@ -1,0 +1,13 @@
+population_size: 10000
+num_parents: 5000
+mutation_rate: 0.05
+elitism: 0.1
+max_gen: 1000
+device: "cuda"
+debug: True
+save_path: "./weights/snake.pth"
+game:
+  board_size: [16, 16]
+  visualize:
+    fps: 10
+    window_size: [800, 800]

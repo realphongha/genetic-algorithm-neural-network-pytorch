@@ -3,12 +3,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class XorNN(nn.Module):
-    # chromosome encodes a solution for the problem xor calculation
+class SnakeNN(nn.Module):
+    # chromosome for snake game bot
     def __init__(self, configs):
         super().__init__()
-        self.fc1 = nn.Linear(2, 4)
-        self.fc2 = nn.Linear(4, 2)
+        self.configs = configs
+        self.fc1 = nn.Linear(4, 4)
+        self.fc2 = nn.Linear(4, 4)
 
     def init_weights(self, mean=0.0, std=1.0):
         for m in self.modules():

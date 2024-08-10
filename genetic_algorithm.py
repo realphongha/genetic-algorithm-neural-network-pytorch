@@ -1,3 +1,4 @@
+import time
 from abc import ABC, abstractmethod
 from typing import List
 
@@ -111,7 +112,9 @@ class GeneticAlgorithm(ABC):
         self.goat = max(self.population)
         evolved = False
         gen = 0
+        running_latecy = []
         while not self.can_terminate(evolved, gen):
+            start = time.time()
             gen += 1
             if self.debug:
                 print("Generation %i:" % gen)
@@ -133,7 +136,15 @@ class GeneticAlgorithm(ABC):
             else:
                 # self.population is already sorted since selection()
                 self.population = self.population[int(self.elitism * self.population_size):] + children
+            latency = time.time() - start
+            running_latecy.append(latency)
+            if self.debug:
+                print("Time: %.4f (s)" % latency)
+                print()
         print("Stop evolved!")
         print("Greatest of all time:")
-        if self.debug:
-            self.goat.display()
+        self.goat.display()
+        print("Running time: %.4f (s)" % sum(running_latecy))
+        print("Avg. running time per gen: %.4f (s)" %
+            (sum(running_latecy)/len(running_latecy)))
+

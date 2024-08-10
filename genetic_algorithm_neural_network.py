@@ -1,4 +1,5 @@
 import random
+import os
 
 import torch
 import numpy as np
@@ -33,14 +34,24 @@ class IndividualNN(Individual):
             self.random_init()
         else:
             self.network = network
+        self.network.to(self.device)
+        self.network.eval()
+        self.chromosome = model_to_chromosome(self.network)
+        self.fitness = self.calc_fitness()
+
+    def load_weights(self, path):
+        network = self.network_class(self.configs)
+        network.load_state_dict(torch.load(path))
+        print("Loaded weights from %s" % path)
+        self.network = network
+        self.network.to(self.device)
+        self.network.eval()
         self.chromosome = model_to_chromosome(self.network)
         self.fitness = self.calc_fitness()
 
     def random_init(self):
-        self.network = self.network_class()
+        self.network = self.network_class(self.configs)
         self.network.init_weights(self.mean, self.std)
-        self.network.to(self.device)
-        self.network.eval()
 
     def cross(self, other):
         cross_idx = random.randint(0, len(self.chromosome) - 1)
@@ -49,7 +60,7 @@ class IndividualNN(Individual):
             (self.chromosome[:cross_idx], other.chromosome[cross_idx:]),
             axis=0
         )
-        child1_net = self.network_class()
+        child1_net = self.network_class(self.configs)
         chromosome_to_model(child1, child1_net)
         yield self.__class__(self.configs, self.network_class, child1_net)
 
@@ -57,7 +68,7 @@ class IndividualNN(Individual):
             (other.chromosome[:cross_idx], self.chromosome[cross_idx:]),
             axis=0
         )
-        child2_net = self.network_class()
+        child2_net = self.network_class(self.configs)
         chromosome_to_model(child2, child2_net)
         yield self.__class__(self.configs, self.network_class, child2_net)
 
@@ -75,9 +86,17 @@ class IndividualNN(Individual):
 class GeneticAlgorithmNN(GeneticAlgorithm):
     def __init__(self, configs: dict):
         super().__init__(configs)
+        self.save_path = configs["save_path"]
 
     def init_population(self):
         for _ in range(self.population_size):
             self.population.append(IndividualNN(self.configs, self.network_class))
 
+    def run(self):
+        super().run()
+        if self.save_path is not None:
+            save_dir = os.path.split(self.save_path)[0]
+            os.makedirs(save_dir, exist_ok=True)
+            torch.save(self.goat.network.state_dict(), self.save_path)
+            print("Saved the GOAT to %s" % self.save_path)
 

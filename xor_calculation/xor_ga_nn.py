@@ -6,10 +6,12 @@ from genetic_algorithm_neural_network import GeneticAlgorithmNN, IndividualNN
 from xor_calculation.xor_nn import XorNN
 
 
-ZERO_ZERO = torch.tensor([0, 0]).float()
-ZERO_ONE = torch.tensor([0, 1]).float()
-ONE_ZERO = torch.tensor([1, 0]).float()
-ONE_ONE = torch.tensor([1, 1]).float()
+X_TRAIN = torch.tensor([
+    [0, 0],  # 0 xor 0 == 0
+    [0, 1],  # 0 xor 1 == 1
+    [1, 0],  # 1 xor 0 == 1
+    [1, 1],  # 1 xor 1 == 0
+]).float()
 
 
 class XorIndividualNN(IndividualNN):
@@ -17,17 +19,19 @@ class XorIndividualNN(IndividualNN):
         super().__init__(configs, network_class, network)
 
     def display(self):
-        print("0 xor 0 =", self.network(ZERO_ZERO.to(self.device)).cpu().detach().numpy())
-        print("0 xor 1 =", self.network(ZERO_ONE.to(self.device)).cpu().detach().numpy())
-        print("1 xor 0 =", self.network(ONE_ZERO.to(self.device)).cpu().detach().numpy())
-        print("1 xor 1 =", self.network(ONE_ONE.to(self.device)).cpu().detach().numpy())
+        res = self.network(X_TRAIN.to(self.device)).cpu().detach().numpy()
+        print("0 xor 0 =", res[0])
+        print("0 xor 1 =", res[1])
+        print("1 xor 0 =", res[2])
+        print("1 xor 1 =", res[3])
 
     def calc_fitness(self):
         conf = 0.0
-        conf += self.network(ZERO_ZERO.to(self.device))[0].item()
-        conf += self.network(ZERO_ONE.to(self.device))[1].item()
-        conf += self.network(ONE_ZERO.to(self.device))[1].item()
-        conf += self.network(ONE_ONE.to(self.device))[0].item()
+        res = self.network(X_TRAIN.to(self.device)).cpu().detach().numpy()
+        conf += res[0][0].item()
+        conf += res[1][1].item()
+        conf += res[2][1].item()
+        conf += res[3][0].item()
         return conf
 
 
@@ -67,13 +71,19 @@ class XorCalculationGANN(GeneticAlgorithmNN):
 
 
 if __name__ == "__main__":
-    xor = XorCalculationGANN(configs={
+    configs = {
         "population_size": 100,
         "num_parents": 50,
         "mutation_rate": 0.02,
         "elitism": 0.1,
         "max_gen": 100,
         "device": "cuda",
+        "save_path": "./weights/xor_calc.pth",
         "debug": True
-    })
+    }
+    xor = XorCalculationGANN(configs)
     xor.run()
+    goat = XorIndividualNN(configs, XorNN)
+    goat.load_weights("./weights/xor_calc.pth")
+    goat.display()
+
