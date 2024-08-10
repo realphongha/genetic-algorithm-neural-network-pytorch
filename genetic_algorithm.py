@@ -17,6 +17,7 @@ class Individual(ABC):
             self.fitness = self.calc_fitness()
         else:
             self.fitness = None
+        self.debug = configs["debug"]
 
     @abstractmethod
     def display(self):

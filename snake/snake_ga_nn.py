@@ -38,14 +38,17 @@ class SnakeIndividualNN(IndividualNN):
             return (0, 1)
 
     def display(self):
-        snake_game = SnakeGame(configs["game"]["board_size"])
-        snake_player = SnakePlayer(
-            configs["game"]["visualize"]["window_size"],
-            configs["game"]["board_size"],
-            configs["game"]["visualize"]["fps"],
-        )
-        snake_player.game_loop(snake_game, self)
-        print("Score:", len(snake_game.snake))
+        if self.debug:
+            snake_game = SnakeGame(configs["game"]["board_size"])
+            snake_player = SnakePlayer(
+                configs["game"]["visualize"]["window_size"],
+                configs["game"]["board_size"],
+                configs["game"]["visualize"]["fps"],
+            )
+            snake_player.game_loop(snake_game, self)
+            print("Score:", len(snake_game.snake))
+        else:
+            print("Score:", self.fitness)
 
     def calc_fitness(self):
         snake_game = SnakeGame(configs["game"]["board_size"])
