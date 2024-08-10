@@ -1,0 +1,139 @@
+from abc import ABC, abstractmethod
+from typing import List
+
+from tqdm import tqdm
+
+
+class Individual(ABC):
+    def __init__(self, configs, chromosome=None):
+        self.configs = configs
+        # chromosome encodes a solution for the problem
+        self.chromosome = chromosome
+        # mutation rate
+        self.mutation_rate = configs["mutation_rate"]
+        # fitness means how good this solution is
+        if chromosome:
+            self.fitness = self.calc_fitness()
+        else:
+            self.fitness = None
+
+    @abstractmethod
+    def display(self):
+        # prints the chromosome to screen
+        pass
+
+    @abstractmethod
+    def random_init(self):
+        # randomly initializes an individual
+        pass
+
+    @abstractmethod
+    def calc_fitness(self):
+        # calculates this individual fitness
+        pass
+
+    @abstractmethod
+    def cross(self, other):
+        # crosses with another individual
+        pass
+
+    @abstractmethod
+    def mutate(self):
+        # mutates
+        pass
+
+    def is_valid(self):
+        # is this a valid solution?
+        # override it if needed
+        return True
+
+    def __lt__(self, other):
+        # for comparing individuals
+        return self.fitness < other.fitness
+
+    def __eq__(self, other):
+        # override it if needed
+        return self.chromosome == other.chromosome
+
+    @abstractmethod
+    def __hash__(self):
+        pass
+
+
+class GeneticAlgorithm(ABC):
+    def __init__(self, configs: dict):
+        self.configs = configs
+        # how many individuals in the population?
+        self.population_size = configs["population_size"]
+        # how many parents to be selected for crossover?
+        self.num_parents = configs["num_parents"]
+        assert self.num_parents < self.population_size
+        # all individuals in current generation
+        self.population: List[Individual] = list()
+        # keeps best individuals from last generation or not? percentage or None
+        self.elitism = configs.get("elitism", None)
+        assert self.elitism is None or 0 <= self.elitism <= 1
+        self.max_gen = configs.get("max_gen", None)
+        self.max_gen_without_evolution = configs.get("max_gen_without_evolution", None)
+        # verbose or not?
+        self.debug = configs.get("debug", True)
+        # greatest of all time
+        self.goat: Individual = None
+
+    @abstractmethod
+    def init_population(self):
+        # initializes population
+        pass
+
+    @abstractmethod
+    def selection(self):
+        # selects some individuals to reproduce next generation
+        pass
+
+    @abstractmethod
+    def crossover(self, population: List[Individual]):
+        # does crossover to produce offsprings
+        pass
+
+    @abstractmethod
+    def mutation(self, population: List[Individual]):
+        # mutates the population
+        pass
+
+    @abstractmethod
+    def can_terminate(self, evolved: bool, gen: int):
+        # can the algorithm stop now?
+        pass
+
+    def run(self) -> Individual:
+        # main loop of the algorithm
+        self.init_population()
+        self.goat = max(self.population)
+        evolved = False
+        gen = 0
+        while not self.can_terminate(evolved, gen):
+            gen += 1
+            if self.debug:
+                print("Generation %i:" % gen)
+            parents = self.selection()
+            children = self.crossover(parents)
+            children = self.mutation(children)
+            greatest = max(children)
+            if greatest > self.goat:
+                self.goat = greatest
+                evolved = True
+            if self.debug:
+                print("Best individual in this generation:")
+                if self.debug:
+                    greatest.display()
+                if evolved:
+                    print("Evolved!")
+            if not self.elitism:
+                self.population = children
+            else:
+                # self.population is already sorted since selection()
+                self.population = self.population[int(self.elitism * self.population_size):] + children
+        print("Stop evolved!")
+        print("Greatest of all time:")
+        if self.debug:
+            self.goat.display()
