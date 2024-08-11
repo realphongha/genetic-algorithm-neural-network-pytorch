@@ -33,54 +33,47 @@ class IndividualNN(Individual):
         if network is None:
             self.random_init()
         else:
-            self.network = network
-        self.network.to(self.device)
-        self.network.eval()
-        self.chromosome = model_to_chromosome(self.network)
+            self.chromosome = network
+        self.chromosome.to(self.device)
+        self.chromosome.eval()
         self.fitness = self.calc_fitness()
 
     def load_weights(self, path):
         network = self.network_class(self.configs)
         network.load_state_dict(torch.load(path))
         print("Loaded weights from %s" % path)
-        self.network = network
-        self.network.to(self.device)
-        self.network.eval()
-        self.chromosome = model_to_chromosome(self.network)
+        self.chromosome = network
+        self.chromosome.to(self.device)
+        self.chromosome.eval()
         self.fitness = self.calc_fitness()
 
     def random_init(self):
-        self.network = self.network_class(self.configs)
-        self.network.init_weights(self.mean, self.std)
+        self.chromosome = self.network_class(self.configs)
+        self.chromosome.init_weights(self.mean, self.std)
 
     def cross(self, other):
-        cross_idx = random.randint(0, len(self.chromosome) - 1)
-
-        child1 = np.concatenate(
-            (self.chromosome[:cross_idx], other.chromosome[cross_idx:]),
-            axis=0
-        )
-        child1_net = self.network_class(self.configs)
-        chromosome_to_model(child1, child1_net)
-        yield self.__class__(self.configs, self.network_class, child1_net)
-
-        child2 = np.concatenate(
-            (other.chromosome[:cross_idx], self.chromosome[cross_idx:]),
-            axis=0
-        )
-        child2_net = self.network_class(self.configs)
-        chromosome_to_model(child2, child2_net)
-        yield self.__class__(self.configs, self.network_class, child2_net)
+        child_net = self.network_class(self.configs)
+        for p1, p2, c in zip(
+            self.chromosome.parameters(), other.chromosome.parameters(), child_net.parameters()
+        ):
+            if random.random() < 0.5:
+                c.data = p1.data.clone()
+            else:
+                c.data = p2.data.clone()
+        yield self.__class__(self.configs, self.network_class, child_net)
 
     def mutate(self):
-        if random.random() < self.mutation_rate:
-            cross_idx = random.randint(0, len(self.chromosome) - 1)
-            self.chromosome[cross_idx] = random.gauss(self.mean, self.std)
-            chromosome_to_model(self.chromosome, self.network)
-            self.fitness = self.calc_fitness()
+        for p in self.chromosome.parameters():
+            if random.random() > self.mutation_rate:
+                continue
+            sh = p.data.shape
+            randn_mask = torch.randn(sh) * self.mutation_strength
+            p.data += randn_mask.to(self.device)
+        # re-calculate fitness after mutation
+        self.fitness = self.calc_fitness()
 
     def __hash__(self):
-        return hash(self.chromosome)
+        return hash(model_to_chromosome(self.chromosome))
 
 
 class GeneticAlgorithmNN(GeneticAlgorithm):
@@ -88,15 +81,33 @@ class GeneticAlgorithmNN(GeneticAlgorithm):
         super().__init__(configs)
         self.save_path = configs["save_path"]
 
-    def init_population(self):
-        for _ in range(self.population_size):
-            self.population.append(IndividualNN(self.configs, self.network_class))
+    def selection(self):
+        parents = self.population[:self.num_parents]
+        return parents
+
+    def crossover(self, population):
+        children = []
+        while True:
+            parent1 = random.choice(population)
+            parent2 = random.choice(population)
+            for child in parent1.cross(parent2):
+                children.append(child)
+                if len(children) >= self.population_size:
+                    break
+            if len(children) >= self.population_size:
+                break
+        return children
+
+    def mutation(self, population):
+        for individual in population:
+            individual.mutate()
+        return population
 
     def run(self):
         super().run()
         if self.save_path is not None:
             save_dir = os.path.split(self.save_path)[0]
             os.makedirs(save_dir, exist_ok=True)
-            torch.save(self.goat.network.state_dict(), self.save_path)
+            torch.save(self.goat.chromosome.state_dict(), self.save_path)
             print("Saved the GOAT to %s" % self.save_path)
 

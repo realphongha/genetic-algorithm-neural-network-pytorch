@@ -12,6 +12,8 @@ class Individual(ABC):
         self.chromosome = chromosome
         # mutation rate
         self.mutation_rate = configs["mutation_rate"]
+        # mutation rate
+        self.mutation_strength = configs["mutation_strength"]
         # fitness means how good this solution is
         if chromosome:
             self.fitness = self.calc_fitness()
@@ -119,6 +121,7 @@ class GeneticAlgorithm(ABC):
             gen += 1
             if self.debug:
                 print("Generation %i:" % gen)
+            self.population.sort(reverse=True)
             parents = self.selection()
             children = self.crossover(parents)
             children = self.mutation(children)
@@ -126,6 +129,8 @@ class GeneticAlgorithm(ABC):
             if greatest > self.goat:
                 self.goat = greatest
                 evolved = True
+            else:
+                evolved = False
             if self.debug:
                 print("Best individual in this generation:")
                 if self.debug:
@@ -135,7 +140,6 @@ class GeneticAlgorithm(ABC):
             if not self.elitism:
                 self.population = children
             else:
-                # self.population is already sorted since selection()
                 self.population = self.population[int(self.elitism * self.population_size):] + children
             latency = time.time() - start
             running_latecy.append(latency)

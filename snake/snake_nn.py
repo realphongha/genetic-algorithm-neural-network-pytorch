@@ -8,8 +8,9 @@ class SnakeNN(nn.Module):
     def __init__(self, configs):
         super().__init__()
         self.configs = configs
-        self.fc1 = nn.Linear(4, 4)
-        self.fc2 = nn.Linear(4, 4)
+        self.fc1 = nn.Linear(7, 14)
+        self.fc2 = nn.Linear(14, 28)
+        self.fc3 = nn.Linear(28, 4)
 
     def init_weights(self, mean=0.0, std=1.0):
         for m in self.modules():
@@ -20,8 +21,9 @@ class SnakeNN(nn.Module):
                 nn.init.zeros_(m.bias)
 
     def forward(self, x):
-        x = F.relu(self.fc1(x))
-        x = F.softmax(self.fc2(x))
+        x = self.fc1(x)
+        x = self.fc2(x)
+        x = F.softmax(self.fc3(x), dim=-1)
         return x
 
 

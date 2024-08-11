@@ -1,8 +1,9 @@
-population_size: 10000
-num_parents: 5000
-mutation_rate: 0.05
+population_size: 1000
+num_parents: 500
+mutation_rate: 0.01
+mutation_strength: 0.1
 elitism: 0.1
-max_gen: 1000
+max_gen: 100
 device: "cuda"
 debug: True
 save_path: "./weights/snake.pth"
