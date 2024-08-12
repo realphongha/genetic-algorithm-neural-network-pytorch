@@ -15,11 +15,11 @@ class SnakeIndividualNN(IndividualNN):
         w, h = game.w, game.h
         inp = [
             w, h, # board size
-            game.food[1]*w + game.food[0],
-            game.snake[-2][1]*w + game.snake[-2][0],  # previous head
+            game.food[1]*w + game.food[0],  # food
             game.snake[-1][1]*w + game.snake[-1][0],  # head
+            game.snake[-2][1]*w + game.snake[-2][0],  # previous head
             game.snake[0][1]*w + game.snake[0][0],  # tail
-            len(game.snake)
+            len(game.snake)  # snake length
         ]
         inp = torch.tensor(inp).float()
         # normalize by board size
@@ -53,13 +53,13 @@ class SnakeIndividualNN(IndividualNN):
 
     def calc_fitness(self):
         snake_game = SnakeGame(configs["game"]["board_size"])
-        snake_game.velocity = self.get_action(snake_game)
         res = SnakeGame.GAME_RUNNING
         turns = -1
         turns_without_food = 0
         last_len = len(snake_game.snake)
         while res == SnakeGame.GAME_RUNNING:
             turns += 1
+            snake_game.velocity = self.get_action(snake_game)
             res = snake_game.update()
             if len(snake_game.snake) == last_len:
                 turns_without_food += 1

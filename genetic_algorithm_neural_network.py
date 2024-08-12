@@ -63,7 +63,7 @@ class IndividualNN(Individual):
                 c.data = p2.data.clone()
         yield self.__class__(self.configs, self.network_class, child_net)
 
-    def mutate(self):
+    def mutate_one_param(self):
         if random.random() > self.mutation_rate:
             return
         params = random.choice(list(self.chromosome.parameters()))
@@ -74,7 +74,7 @@ class IndividualNN(Individual):
         self.fitness = self.calc_fitness()
 
 
-    def mutate_layer(self):
+    def mutate(self):
         for p in self.chromosome.parameters():
             if random.random() > self.mutation_rate:
                 continue
