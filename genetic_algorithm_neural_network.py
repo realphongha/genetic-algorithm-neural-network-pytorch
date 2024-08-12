@@ -2,6 +2,7 @@ import random
 import os
 
 import torch
+torch.set_grad_enabled(False)
 import numpy as np
 
 from genetic_algorithm import Individual, GeneticAlgorithm
@@ -28,8 +29,8 @@ class IndividualNN(Individual):
         super().__init__(configs)
         self.network_class = network_class
         self.device = configs["device"]
-        self.mean = 0.0
-        self.std = 1.0
+        self.uniform_a = -1.0
+        self.uniform_b = 1.0
         if network is None:
             self.random_init()
         else:
@@ -49,7 +50,7 @@ class IndividualNN(Individual):
 
     def random_init(self):
         self.chromosome = self.network_class(self.configs)
-        self.chromosome.init_weights(self.mean, self.std)
+        self.chromosome.init_weights(self.uniform_a, self.uniform_b)
 
     def cross(self, other):
         child_net = self.network_class(self.configs)
@@ -63,6 +64,17 @@ class IndividualNN(Individual):
         yield self.__class__(self.configs, self.network_class, child_net)
 
     def mutate(self):
+        if random.random() > self.mutation_rate:
+            return
+        params = random.choice(list(self.chromosome.parameters()))
+        flat = params.data.view(-1)
+        idx = random.randint(0, flat.shape[0] - 1)
+        flat[idx] = random.uniform(self.uniform_a, self.uniform_b)
+        # re-calculate fitness after mutation
+        self.fitness = self.calc_fitness()
+
+
+    def mutate_layer(self):
         for p in self.chromosome.parameters():
             if random.random() > self.mutation_rate:
                 continue

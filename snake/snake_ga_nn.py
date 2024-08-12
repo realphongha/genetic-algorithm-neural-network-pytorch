@@ -1,5 +1,3 @@
-import random
-
 import yaml
 import torch
 
@@ -87,6 +85,8 @@ class SnakeGANN(GeneticAlgorithmNN):
 
 if __name__ == "__main__":
     configs = yaml.load(open("snake/configs.yaml"), Loader=yaml.FullLoader)
+    if configs["device"] == "cuda" and not torch.cuda.is_available():
+        configs["device"] = "cpu"
     snake = SnakeGANN(configs)
     snake.run()
 

@@ -57,7 +57,7 @@ class Individual(ABC):
 
     def __eq__(self, other):
         # override it if needed
-        return self.chromosome == other.chromosome
+        return self.fitness == other.fitness
 
     @abstractmethod
     def __hash__(self):

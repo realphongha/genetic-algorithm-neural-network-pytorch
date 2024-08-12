@@ -1,5 +1,3 @@
-import random
-
 import torch
 
 from genetic_algorithm_neural_network import GeneticAlgorithmNN, IndividualNN
@@ -18,7 +16,6 @@ class XorIndividualNN(IndividualNN):
     def __init__(self, configs, network_class, network=None):
         super().__init__(configs, network_class, network)
 
-    @torch.no_grad()
     def display(self):
         res = self.chromosome(X_TRAIN.to(self.device)).cpu().detach().numpy()
         print("0 xor 0 =", res[0])
@@ -26,7 +23,6 @@ class XorIndividualNN(IndividualNN):
         print("1 xor 0 =", res[2])
         print("1 xor 1 =", res[3])
 
-    @torch.no_grad()
     def calc_fitness(self):
         conf = 0.0
         res = self.chromosome(X_TRAIN.to(self.device)).cpu().detach().numpy()
@@ -51,13 +47,13 @@ class XorCalculationGANN(GeneticAlgorithmNN):
 
 if __name__ == "__main__":
     configs = {
-        "population_size": 100,
-        "num_parents": 50,
+        "population_size": 500,
+        "num_parents": 300,
         "mutation_rate": 0.01,
         "mutation_strength": 0.1,
-        "elitism": 0.1,
+        "elitism": 0.05,
         "max_gen": 100,
-        "device": "cuda",
+        "device": "cuda" if torch.cuda.is_available() else "cpu",
         "save_path": "./weights/xor_calc.pth",
         "debug": True
     }
