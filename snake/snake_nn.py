@@ -8,9 +8,10 @@ class SnakeNN(nn.Module):
     def __init__(self, configs):
         super().__init__()
         self.configs = configs
-        self.fc1 = nn.Linear(7, 14)
-        self.fc2 = nn.Linear(14, 28)
-        self.fc3 = nn.Linear(28, 4)
+        w, h = configs["game"]["board_size"]
+        self.fc1 = nn.Linear(h, h)
+        self.fc2 = nn.Linear(h, h)
+        self.fc3 = nn.Linear(h, 3)
 
     def init_weights(self, a=-1.0, b=1.0):
         for m in self.modules():

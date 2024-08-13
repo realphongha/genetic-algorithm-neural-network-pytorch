@@ -57,7 +57,7 @@ class Individual(ABC):
 
     def __eq__(self, other):
         # override it if needed
-        return self.fitness == other.fitness
+        return self.chromosome == other.chromosome
 
     @abstractmethod
     def __hash__(self):
@@ -119,8 +119,7 @@ class GeneticAlgorithm(ABC):
         while not self.can_terminate(evolved, gen):
             start = time.time()
             gen += 1
-            if self.debug:
-                print("Generation %i:" % gen)
+            print("Generation %i:" % gen)
             self.population.sort(reverse=True)
             parents = self.selection()
             children = self.crossover(parents)
@@ -131,12 +130,10 @@ class GeneticAlgorithm(ABC):
                 evolved = True
             else:
                 evolved = False
-            if self.debug:
-                print("Best individual in this generation:")
-                if self.debug:
-                    greatest.display()
-                if evolved:
-                    print("Evolved!")
+            print("Best individual in this generation:")
+            greatest.display()
+            if evolved:
+                print("Evolved!")
             if not self.elitism:
                 self.population = children
             else:

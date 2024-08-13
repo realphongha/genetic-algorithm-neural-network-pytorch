@@ -63,7 +63,7 @@ class IndividualNN(Individual):
                 c.data = p2.data.clone()
         yield self.__class__(self.configs, self.network_class, child_net)
 
-    def mutate_one_param(self):
+    def mutate_param(self):
         if random.random() > self.mutation_rate:
             return
         params = random.choice(list(self.chromosome.parameters()))
@@ -74,7 +74,7 @@ class IndividualNN(Individual):
         self.fitness = self.calc_fitness()
 
 
-    def mutate(self):
+    def mutate_layer(self):
         for p in self.chromosome.parameters():
             if random.random() > self.mutation_rate:
                 continue
@@ -83,6 +83,16 @@ class IndividualNN(Individual):
             p.data += randn_mask.to(self.device)
         # re-calculate fitness after mutation
         self.fitness = self.calc_fitness()
+
+    def mutate(self):
+        if self.configs["mutation_type"] == "layer":
+            self.mutate_layer()
+        elif self.configs["mutation_type"] == "param":
+            self.mutate_param()
+        else:
+            raise NotImplementedError(
+                f"{self.configs['mutation_type']} not implemented!"
+            )
 
     def __hash__(self):
         return hash(model_to_chromosome(self.chromosome))
