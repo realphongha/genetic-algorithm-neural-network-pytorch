@@ -16,6 +16,7 @@ class XorIndividualNN(IndividualNN):
     def __init__(self, configs, network_class, network=None):
         super().__init__(configs, network_class, network)
 
+    @torch.no_grad()
     def display(self):
         res = self.chromosome(X_TRAIN.to(self.device)).cpu().detach().numpy()
         print("0 xor 0 =", res[0])
@@ -23,6 +24,7 @@ class XorIndividualNN(IndividualNN):
         print("1 xor 0 =", res[2])
         print("1 xor 1 =", res[3])
 
+    @torch.no_grad()
     def calc_fitness(self):
         conf = 0.0
         res = self.chromosome(X_TRAIN.to(self.device)).cpu().detach().numpy()
