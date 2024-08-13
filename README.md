@@ -1,5 +1,6 @@
-# genetic-algorithms
-Implementation for some genetic algorithms in Python
+# genetic-algorithm-neural-network-pytorch
+Implementation for Genetic algorithm with neural network in Pytorch
+
 # Directory structure
 - `genetic_algorithm.py`: Abstract class for genetic algorithm
 - `genetic_algorithm_neural_network.py`: Abstract class for genetic algorithm 
