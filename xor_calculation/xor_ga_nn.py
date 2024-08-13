@@ -49,7 +49,7 @@ if __name__ == "__main__":
     configs = {
         "population_size": 500,
         "num_parents": 300,
-        "mutation_type": "param",
+        "mutation_type": "layer",
         "mutation_rate": 0.01,
         "mutation_strength": 0.1,
         "elitism": 0.05,
