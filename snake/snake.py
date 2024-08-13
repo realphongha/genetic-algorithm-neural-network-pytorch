@@ -1,6 +1,7 @@
-import numpy as np
 import random
 from typing import Optional
+
+import numpy as np
 
 
 class SnakePlayer:

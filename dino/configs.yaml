@@ -1,0 +1,27 @@
+population_size: 100
+num_parents: 60
+mutation_type: layer
+mutation_rate: 0.05
+mutation_strength: 0.2
+elitism: 0.05
+max_gen: 100
+simulation_times: 20
+device: "cuda"
+debug: False
+save_path: "./weights/dino.pth"
+train: True
+test: False
+game:
+  screen_size: [800, 400]
+  dino_size: [50, 50]
+  obstacle: 
+    w: 20
+    h: [30, 70]
+  jump_power: -15
+  gravity: 1
+  init_speed: -10
+  change_speed_each: 1000
+  accel: 1
+  max_speed: -30
+  win_score: 1000000
+  fps: 60
