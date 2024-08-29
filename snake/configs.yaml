@@ -1,6 +1,6 @@
 population_size: 1000
 num_parents: 700
-mutation_type: layer
+mutation_type: param
 mutation_rate: 0.05
 mutation_strength: 0.2
 elitism: 0.05

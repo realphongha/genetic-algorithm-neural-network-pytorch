@@ -16,12 +16,14 @@ game:
   dino_size: [50, 50]
   obstacle:
     types: ["cactus", "bird"]
+    # [x, y] means randomly choose from this range
     cactus:
-      w: 20
+      y: [0, 0]
+      w: [20, 40]
       h: [30, 70]
     bird:
-      y: [40, 100]
-      w: 20
+      y: [31, 120]
+      w: [20, 40]
       h: [20, 80]
 
   jump_power: -15

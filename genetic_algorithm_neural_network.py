@@ -100,9 +100,18 @@ class IndividualNN(Individual):
 
 
 class GeneticAlgorithmNN(GeneticAlgorithm):
+    INDIVIDUAL_CLASS = IndividualNN
+    NN_CLASS = None
+
     def __init__(self, configs: dict):
         super().__init__(configs)
         self.save_path = configs["save_path"]
+
+    def init_population(self):
+        for _ in range(self.population_size):
+            self.population.append(
+                self.INDIVIDUAL_CLASS(self.configs, self.NN_CLASS)
+            )
 
     def selection(self):
         parents = self.population[:self.num_parents]

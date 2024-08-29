@@ -142,12 +142,11 @@ class SnakeIndividualNN(IndividualNN):
 
 
 class SnakeGANN(GeneticAlgorithmNN):
+    INDIVIDUAL_CLASS = SnakeIndividualNN
+    NN_CLASS = SnakeNN
+
     def __init__(self, configs: dict):
         super().__init__(configs)
-
-    def init_population(self):
-        for _ in range(self.population_size):
-            self.population.append(SnakeIndividualNN(self.configs, SnakeNN))
 
     def can_terminate(self, evolved, gen):
         return gen >= self.max_gen
@@ -158,9 +157,11 @@ if __name__ == "__main__":
     if configs["device"] == "cuda" and not torch.cuda.is_available():
         configs["device"] = "cpu"
     if configs["train"]:
+        print("Training Snake bot...")
         snake = SnakeGANN(configs)
         snake.run()
     if configs["test"]:
+        print("Loading Snake bot weights...")
         configs["debug"] = True
         goat = SnakeIndividualNN(configs, SnakeNN)
         goat.load_weights(configs["save_path"])

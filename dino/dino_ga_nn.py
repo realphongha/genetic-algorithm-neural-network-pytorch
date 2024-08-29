@@ -74,12 +74,11 @@ class DinoIndividualNN(IndividualNN):
 
 
 class DinoGANN(GeneticAlgorithmNN):
+    INDIVIDUAL_CLASS = DinoIndividualNN
+    NN_CLASS = DinoNN
+
     def __init__(self, configs: dict):
         super().__init__(configs)
-
-    def init_population(self):
-        for _ in range(self.population_size):
-            self.population.append(DinoIndividualNN(self.configs, DinoNN))
 
     def can_terminate(self, evolved, gen):
         return gen >= self.max_gen or self.goat.fitness[0] >= self.configs["game"]["win_score"]
@@ -90,9 +89,11 @@ if __name__ == "__main__":
     if configs["device"] == "cuda" and not torch.cuda.is_available():
         configs["device"] = "cpu"
     if configs["train"]:
+        print("Training Dino bot...")
         dino = DinoGANN(configs)
         dino.run()
     if configs["test"]:
+        print("Loading Dino bot weights...")
         configs["debug"] = True
         goat = DinoIndividualNN(configs, DinoNN)
         goat.load_weights(configs["save_path"])

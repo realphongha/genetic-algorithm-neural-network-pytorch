@@ -78,17 +78,10 @@ class Obstacle:
         self.x, self.y = configs["screen_size"]
         self.type = random.choice(configs["obstacle"]["types"])
         cfgs = configs["obstacle"][self.type]
-        self.w = cfgs["w"]
-        if self.type == "cactus":
-            self.h = random.randint(*cfgs["h"])
-            self.y -= self.h
-        elif self.type == "bird":
-            self.h = random.choice(cfgs["h"])
-            self.y -= random.choice(cfgs["y"])
-            self.y -= self.h
-        else:
-            raise NotImplementedError
-
+        self.w = random.randint(*cfgs["w"])
+        self.h = random.randint(*cfgs["h"])
+        self.y -= random.randint(*cfgs["y"])
+        self.y -= self.h
 
 
 class Dino:

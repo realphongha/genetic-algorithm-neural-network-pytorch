@@ -36,12 +36,11 @@ class XorIndividualNN(IndividualNN):
 
 
 class XorCalculationGANN(GeneticAlgorithmNN):
+    INDIVIDUAL_CLASS = XorIndividualNN
+    NN_CLASS = XorNN
+
     def __init__(self, configs: dict):
         super().__init__(configs)
-
-    def init_population(self):
-        for _ in range(self.population_size):
-            self.population.append(XorIndividualNN(self.configs, XorNN))
 
     def can_terminate(self, evolved, gen):
         return gen >= self.max_gen
@@ -49,13 +48,13 @@ class XorCalculationGANN(GeneticAlgorithmNN):
 
 if __name__ == "__main__":
     configs = {
-        "population_size": 500,
-        "num_parents": 300,
-        "mutation_type": "layer",
-        "mutation_rate": 0.01,
+        "population_size": 100,
+        "num_parents": 50,
+        "mutation_type": "param",
+        "mutation_rate": 0.05,
         "mutation_strength": 0.1,
-        "elitism": 0.05,
-        "max_gen": 100,
+        "elitism": 0.1,
+        "max_gen": 500,
         "device": "cuda" if torch.cuda.is_available() else "cpu",
         "save_path": "./weights/xor_calc.pth",
         "debug": True
