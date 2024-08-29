@@ -42,16 +42,27 @@ class DinoPlayer:
             if bot:
                 action = bot.get_action(dino_game)
                 if action == "jump":
+                    dino_game.stand()
                     dino_game.jump()
+                elif action == "duck":
+                    dino_game.duck()
+                else:
+                    dino_game.stand()
             else:
                 for event in self.pygame.event.get():
                     if event.type == self.pygame.QUIT:
                         quit(0)
                     elif event.type == self.pygame.KEYDOWN:
-                        if event.key == self.pygame.K_SPACE:
+                        if event.key in (self.pygame.K_SPACE, self.pygame.K_UP):
+                            dino_game.stand()
                             dino_game.jump()
+                        elif event.key == self.pygame.K_DOWN:
+                            dino_game.duck()
                         elif event.key == self.pygame.K_q:
                             quit(0)
+                    elif event.type == self.pygame.KEYUP:
+                        if event.key == self.pygame.K_DOWN:
+                            dino_game.stand()
             res = dino_game.update()
             if res != Dino.GAME_RUNNING:
                 break
@@ -65,9 +76,19 @@ class DinoPlayer:
 class Obstacle:
     def __init__(self, configs):
         self.x, self.y = configs["screen_size"]
-        self.w = configs["obstacle"]["w"]
-        self.h = random.randint(*configs["obstacle"]["h"])
-        self.y -= self.h
+        self.type = random.choice(configs["obstacle"]["types"])
+        cfgs = configs["obstacle"][self.type]
+        self.w = cfgs["w"]
+        if self.type == "cactus":
+            self.h = random.randint(*cfgs["h"])
+            self.y -= self.h
+        elif self.type == "bird":
+            self.h = random.choice(cfgs["h"])
+            self.y -= random.choice(cfgs["y"])
+            self.y -= self.h
+        else:
+            raise NotImplementedError
+
 
 
 class Dino:
@@ -77,13 +98,12 @@ class Dino:
 
     def __init__(self, configs):
         self.configs = configs
-        self.obs_cfg = configs["obstacle"]
         self.w, self.h = configs["screen_size"]
-        self.dino_size = configs["dino_size"]
         self.jump_power = configs["jump_power"]
         self.acceleration = None
         self.gravity = configs["gravity"]
         self.min_dist = self.w // 4  # min distance between cacti and birds
+        self.dino_size = None
         self.dino = None  # dino position
         self.velocity_y = None  # dino vertical velocity
         self.is_jumping = False
@@ -94,6 +114,7 @@ class Dino:
         self.init_new_game()
 
     def init_new_game(self):
+        self.dino_size = self.configs["dino_size"].copy()
         self.dino = np.array([50, self.h])
         self.velocity_y = 0
         self.jump_times = 0
@@ -111,7 +132,7 @@ class Dino:
             self.velocity_y = 0
 
     def update_obstacle(self):
-        if self.obstacle is None or self.obstacle.x < -self.obs_cfg["w"]:
+        if self.obstacle is None or self.obstacle.x < -self.obstacle.w:
             self.obstacle = Obstacle(self.configs)
         else:
             self.obstacle.x += self.speed
@@ -137,6 +158,12 @@ class Dino:
             self.velocity_y = self.jump_power
             self.is_jumping = True
             self.jump_times += 1
+
+    def duck(self):
+        self.dino_size[1] = self.configs["duck_height"]
+
+    def stand(self):
+        self.dino_size[1] = self.configs["dino_size"][1]
 
     def update(self):
         self.update_dino()

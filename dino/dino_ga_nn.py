@@ -18,6 +18,7 @@ class DinoIndividualNN(IndividualNN):
         # [dino_h, obs_h, dist, speed]
         inp = [
             (game.h-game.dino[1]) / game.h,
+            (game.h-game.obstacle.y) / game.h,
             (game.h-game.obstacle.h) / game.h,
             (game.obstacle.x - game.dino[0]) / game.w,
             -game.speed / game.w
@@ -30,6 +31,8 @@ class DinoIndividualNN(IndividualNN):
         cls_id = prob.argmax(0).item()
         if cls_id == 1:
             return "jump"
+        if cls_id == 2:
+            return "duck"
         else: # == 0
             return "no_action"
 
@@ -52,7 +55,12 @@ class DinoIndividualNN(IndividualNN):
             while res == Dino.GAME_RUNNING:
                 action = self.get_action(dino_game)
                 if action == "jump":
+                    dino_game.stand()
                     dino_game.jump()
+                elif action == "duck":
+                    dino_game.duck()
+                else:
+                    dino_game.stand()
                 res = dino_game.update()
 
             all_scores.append(dino_game.score)
