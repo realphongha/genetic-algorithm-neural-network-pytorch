@@ -102,11 +102,11 @@ class SnakeIndividualNN(IndividualNN):
 
     def display(self):
         if self.debug:
-            snake_game = SnakeGame(configs["game"]["board_size"])
+            snake_game = SnakeGame(self.configs["game"]["board_size"])
             snake_player = SnakePlayer(
-                configs["game"]["visualize"]["window_size"],
-                configs["game"]["board_size"],
-                configs["game"]["visualize"]["fps"],
+                self.configs["game"]["visualize"]["window_size"],
+                self.configs["game"]["board_size"],
+                self.configs["game"]["visualize"]["fps"],
             )
             snake_player.game_loop(snake_game, self)
         print(f"Avg length: {self.fitness[0]}, Avg turns: {self.fitness[1]}")
@@ -115,7 +115,7 @@ class SnakeIndividualNN(IndividualNN):
         all_scores = []
         all_turnes = []
         for _ in range(self.simulation_times):
-            snake_game = SnakeGame(configs["game"]["board_size"])
+            snake_game = SnakeGame(self.configs["game"]["board_size"])
             res = SnakeGame.GAME_RUNNING
             turns = -1
             turns_without_food = 0

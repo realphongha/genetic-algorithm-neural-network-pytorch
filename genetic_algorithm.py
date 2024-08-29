@@ -115,38 +115,42 @@ class GeneticAlgorithm(ABC):
         self.goat = max(self.population)
         evolved = False
         gen = 0
-        running_latecy = []
+        running_latency = []
         while not self.can_terminate(evolved, gen):
-            start = time.time()
-            gen += 1
-            print("Generation %i:" % gen)
-            self.population.sort(reverse=True)
-            parents = self.selection()
-            children = self.crossover(parents)
-            children = self.mutation(children)
-            greatest = max(children)
-            if greatest > self.goat:
-                self.goat = greatest
-                evolved = True
-            else:
-                evolved = False
-            print("Best individual in this generation:")
-            greatest.display()
-            if evolved:
-                print("Evolved!")
-            if not self.elitism:
-                self.population = children
-            else:
-                self.population = self.population[int(self.elitism * self.population_size):] + children
-            latency = time.time() - start
-            running_latecy.append(latency)
-            if self.debug:
-                print("Time: %.4f (s)" % latency)
-                print()
+            try:
+                start = time.time()
+                gen += 1
+                print("Generation %i:" % gen)
+                self.population.sort(reverse=True)
+                parents = self.selection()
+                children = self.crossover(parents)
+                children = self.mutation(children)
+                greatest = max(children)
+                if greatest > self.goat:
+                    self.goat = greatest
+                    evolved = True
+                else:
+                    evolved = False
+                print("Best individual in this generation:")
+                greatest.display()
+                if evolved:
+                    print("Evolved!")
+                if not self.elitism:
+                    self.population = children
+                else:
+                    self.population = self.population[int(self.elitism * self.population_size):] + children
+                latency = time.time() - start
+                running_latency.append(latency)
+                if self.debug:
+                    print("Time: %.4f (s)" % latency)
+                    print()
+            except KeyboardInterrupt:
+                print("Gracefully stop!")
+                break
         print("Stop evolved!")
         print("Greatest of all time:")
         self.goat.display()
-        print("Running time: %.4f (s)" % sum(running_latecy))
+        print("Running time: %.4f (s)" % sum(running_latency))
         print("Avg. running time per gen: %.4f (s)" %
-            (sum(running_latecy)/len(running_latecy)))
+            (sum(running_latency)/len(running_latency)))
 

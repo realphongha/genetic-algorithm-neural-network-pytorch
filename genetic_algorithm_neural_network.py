@@ -39,14 +39,15 @@ class IndividualNN(Individual):
         self.chromosome.eval()
         self.fitness = self.calc_fitness()
 
-    def load_weights(self, path):
+    def load_weights(self, path, calc_fitness=False):
         network = self.network_class(self.configs)
         network.load_state_dict(torch.load(path))
         print("Loaded weights from %s" % path)
         self.chromosome = network
         self.chromosome.to(self.device)
         self.chromosome.eval()
-        self.fitness = self.calc_fitness()
+        if calc_fitness:
+            self.fitness = self.calc_fitness()
 
     def random_init(self):
         self.chromosome = self.network_class(self.configs)

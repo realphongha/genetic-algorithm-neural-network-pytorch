@@ -18,9 +18,9 @@ class DinoIndividualNN(IndividualNN):
         # [dino_h, obs_h, dist, speed]
         inp = [
             (game.h-game.dino[1]) / game.h,
-            game.obstacle.h / game.h,
+            (game.h-game.obstacle.h) / game.h,
             (game.obstacle.x - game.dino[0]) / game.w,
-            game.speed / game.w
+            -game.speed / game.w
         ]
         return torch.tensor(inp).float()
 
@@ -36,14 +36,16 @@ class DinoIndividualNN(IndividualNN):
     def display(self):
         print(f"Avg score: {self.fitness[0]}")
         if self.debug:
-            dino_game = Dino(configs["game"])
-            dino_player = DinoPlayer(configs["game"])
+            dino_game = Dino(self.configs["game"])
+            dino_player = DinoPlayer(self.configs["game"])
             dino_player.game_loop(dino_game, self)
+            return dino_game.score
+        return self.fitness[0]
 
     def calc_fitness(self):
         all_scores = []
         all_jump_times = []
-        dino_game = Dino(configs["game"])
+        dino_game = Dino(self.configs["game"])
         for _ in range(self.simulation_times):
             dino_game.init_new_game()
             res = Dino.GAME_RUNNING
@@ -72,7 +74,7 @@ class DinoGANN(GeneticAlgorithmNN):
             self.population.append(DinoIndividualNN(self.configs, DinoNN))
 
     def can_terminate(self, evolved, gen):
-        return gen >= self.max_gen
+        return gen >= self.max_gen or self.goat.fitness[0] >= self.configs["game"]["win_score"]
 
 
 if __name__ == "__main__":
