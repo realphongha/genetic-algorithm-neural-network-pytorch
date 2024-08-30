@@ -8,9 +8,8 @@ class DinoNN(nn.Module):
     def __init__(self, configs):
         super().__init__()
         self.configs = configs
-        # [dino_h, obs_y, obs_h, dist, speed]
-        self.fc1 = nn.Linear(5, 10)
-        self.fc2 = nn.Linear(10, 3)
+        self.fc1 = nn.Linear(6, 6)
+        self.fc2 = nn.Linear(6, 3)
 
     def init_weights(self, a=-1.0, b=1.0):
         for m in self.modules():

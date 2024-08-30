@@ -15,11 +15,11 @@ class DinoIndividualNN(IndividualNN):
 
     @staticmethod
     def encode_current_position(game):
-        # [dino_h, obs_h, dist, speed]
         inp = [
             (game.h-game.dino[1]) / game.h,
             (game.h-game.obstacle.y) / game.h,
-            (game.h-game.obstacle.h) / game.h,
+            game.obstacle.w / game.w,
+            game.obstacle.h / game.h,
             (game.obstacle.x - game.dino[0]) / game.w,
             -game.speed / game.w
         ]
