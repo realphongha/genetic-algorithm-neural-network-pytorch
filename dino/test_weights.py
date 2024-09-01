@@ -20,7 +20,7 @@ if __name__ == "__main__":
         configs["device"] = "cpu"
     configs["game"]["win_score"] = float("inf")
     configs["debug"] = True
-    goat = DinoIndividualNN(configs, DinoNN)
+    goat = DinoIndividualNN(configs, DinoNN, calc_fitness=False)
     goat.load_weights(args.weights)
     score = goat.display()
     print("Final score:", score)

@@ -13,8 +13,8 @@ X_TRAIN = torch.tensor([
 
 
 class XorIndividualNN(IndividualNN):
-    def __init__(self, configs, network_class, network=None):
-        super().__init__(configs, network_class, network)
+    def __init__(self, configs, network_class, network=None, calc_fitness=True):
+        super().__init__(configs, network_class, network, calc_fitness)
 
     @torch.no_grad()
     def display(self):
@@ -49,6 +49,7 @@ class XorCalculationGANN(GeneticAlgorithmNN):
 if __name__ == "__main__":
     configs = {
         "population_size": 100,
+        "new_population": 50,
         "num_parents": 50,
         "mutation_type": "param",
         "mutation_rate": 0.05,
@@ -56,6 +57,7 @@ if __name__ == "__main__":
         "elitism": 0.1,
         "max_gen": 500,
         "device": "cuda" if torch.cuda.is_available() else "cpu",
+        "workers": 4,
         "save_path": "./weights/xor",
         "debug": True
     }

@@ -95,13 +95,8 @@ class GeneticAlgorithm(ABC):
         pass
 
     @abstractmethod
-    def crossover(self, population: List[Individual]):
-        # does crossover to produce offsprings
-        pass
-
-    @abstractmethod
-    def mutation(self, population: List[Individual]):
-        # mutates the population
+    def crossover_and_mutation(self, parents: List[Individual]):
+        # does crossover to produce offsprings, then mutates the offsprings
         pass
 
     @abstractmethod
@@ -126,10 +121,10 @@ class GeneticAlgorithm(ABC):
                 start = time.time()
                 gen += 1
                 print("Generation %i:" % gen)
+                self.population.extend(self.new_population(self.configs["new_population"]))
                 self.population.sort(reverse=True)
                 parents = self.selection()
-                children = self.crossover(parents)
-                children = self.mutation(children)
+                children = self.crossover_and_mutation(parents)
                 greatest = max(children)
                 self.loop_callback(greatest)
                 if greatest > self.goat:

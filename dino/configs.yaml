@@ -1,4 +1,5 @@
 population_size: 200
+new_population: 100
 num_parents: 100
 mutation_type: param
 mutation_rate: 0.05
@@ -7,6 +8,7 @@ elitism: 0.05
 max_gen: 500
 simulation_times: 10
 device: "cuda"
+workers: 4 
 debug: False
 save_path: "./weights/dino/"
 game:

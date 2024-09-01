@@ -1,4 +1,5 @@
 population_size: 1000
+new_population: 500
 num_parents: 700
 mutation_type: param
 mutation_rate: 0.05
@@ -7,6 +8,7 @@ elitism: 0.05
 max_gen: 1000
 simulation_times: 10
 device: "cuda"
+workers: 4
 debug: False
 save_path: "./weights/snake.pth"
 train: True

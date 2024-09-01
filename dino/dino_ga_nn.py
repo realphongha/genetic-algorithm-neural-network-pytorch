@@ -10,9 +10,9 @@ from dino.dino import DinoPlayer, Dino
 
 
 class DinoIndividualNN(IndividualNN):
-    def __init__(self, configs, network_class, network=None):
+    def __init__(self, configs, network_class, network=None, calc_fitness=True):
         self.simulation_times = configs["simulation_times"]
-        super().__init__(configs, network_class, network)
+        super().__init__(configs, network_class, network, calc_fitness)
         # how many times to run simulation
 
     @staticmethod

@@ -3,6 +3,7 @@ import os
 
 import torch
 torch.set_grad_enabled(False)
+import torch.multiprocessing as mp
 import numpy as np
 
 from genetic_algorithm import Individual, GeneticAlgorithm
@@ -25,7 +26,7 @@ def chromosome_to_model(chromosome, model):
 
 
 class IndividualNN(Individual):
-    def __init__(self, configs, network_class, network=None):
+    def __init__(self, configs, network_class, network=None, calc_fitness=True):
         super().__init__(configs)
         self.network_class = network_class
         self.device = configs["device"]
@@ -37,7 +38,8 @@ class IndividualNN(Individual):
             self.chromosome = network
         self.chromosome.to(self.device)
         self.chromosome.eval()
-        self.fitness = self.calc_fitness()
+        if calc_fitness:
+            self.fitness = self.calc_fitness()
 
     def load_weights(self, path, calc_fitness=False):
         network = self.network_class(self.configs)
@@ -63,7 +65,7 @@ class IndividualNN(Individual):
                 c.data = p1.data.clone()
             else:
                 c.data = p2.data.clone()
-        yield self.__class__(self.configs, self.network_class, child_net)
+        yield self.__class__(self.configs, self.network_class, child_net, calc_fitness=False)
 
     def mutate_param(self):
         if random.random() > self.mutation_rate:
@@ -72,8 +74,6 @@ class IndividualNN(Individual):
         flat = params.data.view(-1)
         idx = random.randint(0, flat.shape[0] - 1)
         flat[idx] = random.uniform(self.uniform_a, self.uniform_b)
-        # re-calculate fitness after mutation
-        self.fitness = self.calc_fitness()
 
 
     def mutate_layer(self):
@@ -83,8 +83,6 @@ class IndividualNN(Individual):
             sh = p.data.shape
             randn_mask = torch.randn(sh) * self.mutation_strength
             p.data += randn_mask.to(self.device)
-        # re-calculate fitness after mutation
-        self.fitness = self.calc_fitness()
 
     def mutate(self):
         if self.configs["mutation_type"] == "layer":
@@ -118,6 +116,18 @@ class GeneticAlgorithmNN(GeneticAlgorithm):
         self.save_path = configs["save_path"]
         self.pretrained_weights = pretrained_weights \
             if os.path.isfile(pretrained_weights) else None
+        if self.configs["workers"] and self.configs["workers"] > 1:
+            self.pool = mp.Pool(self.configs["workers"])
+
+    def new_population(self, num):
+        if self.configs["workers"] and self.configs["workers"] > 1:
+            # multiprocessing for initializing new population
+            return self.pool.starmap(
+                self.INDIVIDUAL_CLASS,
+                [(self.configs, self.NN_CLASS) for _ in range(num)]
+            )
+        # no multiprocessing
+        return [self.INDIVIDUAL_CLASS(self.configs, self.NN_CLASS) for _ in range(num)]
 
     def init_population(self):
         if self.pretrained_weights:
@@ -134,34 +144,31 @@ class GeneticAlgorithmNN(GeneticAlgorithm):
                 network.load_state_dict(state_dict)
                 individual = self.INDIVIDUAL_CLASS(self.configs, self.NN_CLASS, network)
                 individual.mutate()
+                individual.fitness = individual.calc_fitness()
                 self.population.append(individual)
             self.configs["mutation_rate"] = old_mutation_rate
-        while (len(self.population) < self.population_size):
-            self.population.append(
-                self.INDIVIDUAL_CLASS(self.configs, self.NN_CLASS)
-            )
+
+        self.population.extend(self.new_population(self.population_size - len(self.population)))
 
     def selection(self):
         parents = self.population[:self.num_parents]
         return parents
 
-    def crossover(self, population):
+    def crossover_and_mutation(self, population):
         children = []
         while True:
             parent1 = random.choice(population)
             parent2 = random.choice(population)
             for child in parent1.cross(parent2):
+                child.mutate()
+                # calculate fitness once for both cross and mutate, should be faster
+                child.fitness = child.calc_fitness()
                 children.append(child)
                 if len(children) >= self.population_size:
                     break
             if len(children) >= self.population_size:
                 break
         return children
-
-    def mutation(self, population):
-        for individual in population:
-            individual.mutate()
-        return population
 
     def loop_callback(self, greatest_of_this_gen):
         if greatest_of_this_gen > self.goat:

@@ -23,9 +23,9 @@ class SnakeIndividualNN(IndividualNN):
         (0, -1): (1, 0),
     }
 
-    def __init__(self, configs, network_class, network=None):
+    def __init__(self, configs, network_class, network=None, calc_fitness=True):
         self.simulation_times = configs["simulation_times"]
-        super().__init__(configs, network_class, network)
+        super().__init__(configs, network_class, network, calc_fitness)
         # how many times to run simulation
 
     @staticmethod
