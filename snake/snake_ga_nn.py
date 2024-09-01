@@ -1,6 +1,8 @@
-import numpy as np
 import yaml
+import argparse
+
 import torch
+import numpy as np
 
 from genetic_algorithm_neural_network import GeneticAlgorithmNN, IndividualNN
 from snake.snake_nn import SnakeNN
@@ -145,25 +147,32 @@ class SnakeGANN(GeneticAlgorithmNN):
     INDIVIDUAL_CLASS = SnakeIndividualNN
     NN_CLASS = SnakeNN
 
-    def __init__(self, configs: dict):
-        super().__init__(configs)
+    def __init__(self, configs: dict, pretrained_weights: str = ''):
+        super().__init__(configs, pretrained_weights)
 
     def can_terminate(self, evolved, gen):
         return gen >= self.max_gen
 
 
 if __name__ == "__main__":
-    configs = yaml.load(open("snake/configs.yaml"), Loader=yaml.FullLoader)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--cfg',
+                        type=str,
+                        default='dino/configs.yaml',
+                        help='path to configs file')
+    parser.add_argument('--weights',
+                        type=str,
+                        default='weights/dino/best.pth',
+                        help='Path to pre-trained weights file')
+    parser.add_argument('--debug', dest='debug', action='store_true')
+    parser.add_argument('--no-debug', dest='debug', action='store_false')
+    parser.set_defaults(debug=True)
+    args = parser.parse_args()
+    configs = yaml.load(open(args.cfg), Loader=yaml.FullLoader)
     if configs["device"] == "cuda" and not torch.cuda.is_available():
         configs["device"] = "cpu"
-    if configs["train"]:
-        print("Training Snake bot...")
-        snake = SnakeGANN(configs)
-        snake.run()
-    if configs["test"]:
-        print("Loading Snake bot weights...")
-        configs["debug"] = True
-        goat = SnakeIndividualNN(configs, SnakeNN)
-        goat.load_weights(configs["save_path"])
-        goat.display()
+    configs["debug"] = args.debug
+    print("Training Snake bot...")
+    snake = SnakeGANN(configs, args.weights)
+    snake.run()
 

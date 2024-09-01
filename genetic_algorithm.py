@@ -109,6 +109,11 @@ class GeneticAlgorithm(ABC):
         # can the algorithm stop now?
         pass
 
+    @abstractmethod
+    def loop_callback(self, greatest_of_this_gen):
+        # callback for each loop
+        pass
+
     def run(self) -> Individual:
         # main loop of the algorithm
         self.init_population()
@@ -126,6 +131,7 @@ class GeneticAlgorithm(ABC):
                 children = self.crossover(parents)
                 children = self.mutation(children)
                 greatest = max(children)
+                self.loop_callback(greatest)
                 if greatest > self.goat:
                     self.goat = greatest
                     evolved = True
@@ -141,11 +147,10 @@ class GeneticAlgorithm(ABC):
                     self.population = self.population[int(self.elitism * self.population_size):] + children
                 latency = time.time() - start
                 running_latency.append(latency)
-                if self.debug:
-                    print("Time: %.4f (s)" % latency)
-                    print()
+                print("Time: %.4f (s)" % latency)
+                print()
             except KeyboardInterrupt:
-                print("Gracefully stop!")
+                print("Gracefully stopped!")
                 break
         print("Stop evolved!")
         print("Greatest of all time:")

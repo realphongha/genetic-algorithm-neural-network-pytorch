@@ -1,16 +1,14 @@
-population_size: 1000
-num_parents: 500
+population_size: 200
+num_parents: 100
 mutation_type: param
 mutation_rate: 0.05
-mutation_strength: 0.1
+mutation_strength: 0.2
 elitism: 0.05
-max_gen: 100
+max_gen: 500
 simulation_times: 10
 device: "cuda"
 debug: False
-save_path: "./weights/dino.pth"
-train: True
-test: False
+save_path: "./weights/dino/"
 game:
   screen_size: [800, 400]
   dino_size: [50, 50]

@@ -40,7 +40,7 @@ class XorCalculationGANN(GeneticAlgorithmNN):
     NN_CLASS = XorNN
 
     def __init__(self, configs: dict):
-        super().__init__(configs)
+        super().__init__(configs, '')
 
     def can_terminate(self, evolved, gen):
         return gen >= self.max_gen
@@ -56,12 +56,12 @@ if __name__ == "__main__":
         "elitism": 0.1,
         "max_gen": 500,
         "device": "cuda" if torch.cuda.is_available() else "cpu",
-        "save_path": "./weights/xor_calc.pth",
+        "save_path": "./weights/xor",
         "debug": True
     }
     xor = XorCalculationGANN(configs)
     xor.run()
     goat = XorIndividualNN(configs, XorNN)
-    goat.load_weights("./weights/xor_calc.pth")
+    goat.load_weights("./weights/xor/best.pth")
     goat.display()
 

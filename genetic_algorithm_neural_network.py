@@ -42,7 +42,8 @@ class IndividualNN(Individual):
     def load_weights(self, path, calc_fitness=False):
         network = self.network_class(self.configs)
         network.load_state_dict(torch.load(path))
-        print("Loaded weights from %s" % path)
+        if not calc_fitness:
+            print("Loaded weights from %s" % path)
         self.chromosome = network
         self.chromosome.to(self.device)
         self.chromosome.eval()
@@ -95,6 +96,15 @@ class IndividualNN(Individual):
                 f"{self.configs['mutation_type']} not implemented!"
             )
 
+    def save_weights(self, file_name):
+        if not os.path.isdir(self.configs["save_path"]):
+            return
+        os.makedirs(self.configs["save_path"], exist_ok=True)
+        torch.save(
+            self.chromosome.state_dict(),
+            os.path.join(self.configs["save_path"], file_name)
+        )
+
     def __hash__(self):
         return hash(model_to_chromosome(self.chromosome))
 
@@ -103,12 +113,30 @@ class GeneticAlgorithmNN(GeneticAlgorithm):
     INDIVIDUAL_CLASS = IndividualNN
     NN_CLASS = None
 
-    def __init__(self, configs: dict):
+    def __init__(self, configs: dict, pretrained_weights: str = ''):
         super().__init__(configs)
         self.save_path = configs["save_path"]
+        self.pretrained_weights = pretrained_weights \
+            if os.path.isfile(pretrained_weights) else None
 
     def init_population(self):
-        for _ in range(self.population_size):
+        if self.pretrained_weights:
+            # if load pretrained weights
+            old_mutation_rate = self.configs["mutation_rate"]
+            self.configs["mutation_rate"] = 1.0
+            state_dict = torch.load(self.pretrained_weights)
+            network = self.NN_CLASS(self.configs)
+            network.load_state_dict(state_dict)
+            individual = self.INDIVIDUAL_CLASS(self.configs, self.NN_CLASS, network)
+            self.population.append(individual)
+            while len(self.population) < self.configs["num_parents"]:
+                network = self.NN_CLASS(self.configs)
+                network.load_state_dict(state_dict)
+                individual = self.INDIVIDUAL_CLASS(self.configs, self.NN_CLASS, network)
+                individual.mutate()
+                self.population.append(individual)
+            self.configs["mutation_rate"] = old_mutation_rate
+        while (len(self.population) < self.population_size):
             self.population.append(
                 self.INDIVIDUAL_CLASS(self.configs, self.NN_CLASS)
             )
@@ -135,11 +163,10 @@ class GeneticAlgorithmNN(GeneticAlgorithm):
             individual.mutate()
         return population
 
-    def run(self):
-        super().run()
-        if self.save_path is not None:
-            save_dir = os.path.split(self.save_path)[0]
-            os.makedirs(save_dir, exist_ok=True)
-            torch.save(self.goat.chromosome.state_dict(), self.save_path)
-            print("Saved the GOAT to %s" % self.save_path)
+    def loop_callback(self, greatest_of_this_gen):
+        if greatest_of_this_gen > self.goat:
+            greatest_of_this_gen.save_weights("best.pth")
+            print("Saved weights to best.pth")
+        greatest_of_this_gen.save_weights("last.pth")
+        print("Saved weights to last.pth")
 
