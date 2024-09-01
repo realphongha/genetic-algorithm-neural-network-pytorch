@@ -100,7 +100,7 @@ class Dino:
         self.dino = None  # dino position
         self.velocity_y = None  # dino vertical velocity
         self.is_jumping = False
-        self.jump_times = None
+        self.action_count = None
         self.speed = None  # obstacle speed, image the dino stands still and obstacles keeps running to it
         self.obstacle = None
         self.score = None
@@ -110,7 +110,7 @@ class Dino:
         self.dino_size = self.configs["dino_size"].copy()
         self.dino = np.array([50, self.h])
         self.velocity_y = 0
-        self.jump_times = 0
+        self.action_count = 0
         self.is_jumping = False
         self.speed = self.configs["init_speed"]
         self.obstacle = Obstacle(self.configs)
@@ -150,9 +150,10 @@ class Dino:
         if not self.is_jumping:
             self.velocity_y = self.jump_power
             self.is_jumping = True
-            self.jump_times += 1
+            self.action_count += 1
 
     def duck(self):
+        self.action_count += 1
         self.dino_size[1] = self.configs["duck_height"]
 
     def stand(self):

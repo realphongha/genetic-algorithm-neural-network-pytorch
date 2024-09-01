@@ -51,7 +51,7 @@ class DinoIndividualNN(IndividualNN):
 
     def calc_fitness(self):
         all_scores = []
-        all_jump_times = []
+        all_action_count = []
         dino_game = Dino(self.configs["game"])
         for _ in range(self.simulation_times):
             dino_game.init_new_game()
@@ -69,8 +69,8 @@ class DinoIndividualNN(IndividualNN):
                 res = dino_game.update()
 
             all_scores.append(dino_game.score)
-            all_jump_times.append(dino_game.jump_times)
-        return np.average(all_scores), np.average(all_jump_times)
+            all_action_count.append(dino_game.action_count)
+        return np.average(all_scores), np.average(all_action_count)
 
     def __lt__(self, other):
         if self.fitness[0] == other.fitness[0]:
