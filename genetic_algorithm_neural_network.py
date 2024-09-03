@@ -39,7 +39,7 @@ class IndividualNN(Individual):
         self.chromosome.to(self.device)
         self.chromosome.eval()
         if calc_fitness:
-            self.fitness = self.calc_fitness()
+            self.calc_fitness()
 
     def load_weights(self, path, calc_fitness=False):
         network = self.network_class(self.configs)
@@ -50,7 +50,16 @@ class IndividualNN(Individual):
         self.chromosome.to(self.device)
         self.chromosome.eval()
         if calc_fitness:
-            self.fitness = self.calc_fitness()
+            self.calc_fitness()
+
+    def save_weights(self, file_name):
+        if not os.path.isdir(self.configs["save_path"]):
+            return
+        os.makedirs(self.configs["save_path"], exist_ok=True)
+        torch.save(
+            self.chromosome.state_dict(),
+            os.path.join(self.configs["save_path"], file_name)
+        )
 
     def random_init(self):
         self.chromosome = self.network_class(self.configs)
@@ -69,38 +78,32 @@ class IndividualNN(Individual):
 
     def mutate_param(self):
         if random.random() > self.mutation_rate:
-            return
+            return False
         params = random.choice(list(self.chromosome.parameters()))
         flat = params.data.view(-1)
         idx = random.randint(0, flat.shape[0] - 1)
         flat[idx] = random.uniform(self.uniform_a, self.uniform_b)
+        return True
 
 
     def mutate_layer(self):
+        mutated = False
         for p in self.chromosome.parameters():
             if random.random() > self.mutation_rate:
                 continue
             sh = p.data.shape
             randn_mask = torch.randn(sh) * self.mutation_strength
             p.data += randn_mask.to(self.device)
+            mutated = True
+        return mutated
 
     def mutate(self):
         if self.configs["mutation_type"] == "layer":
-            self.mutate_layer()
+            return self.mutate_layer()
         elif self.configs["mutation_type"] == "param":
-            self.mutate_param()
-        else:
-            raise NotImplementedError(
-                f"{self.configs['mutation_type']} not implemented!"
-            )
-
-    def save_weights(self, file_name):
-        if not os.path.isdir(self.configs["save_path"]):
-            return
-        os.makedirs(self.configs["save_path"], exist_ok=True)
-        torch.save(
-            self.chromosome.state_dict(),
-            os.path.join(self.configs["save_path"], file_name)
+            return self.mutate_param()
+        raise NotImplementedError(
+            f"{self.configs['mutation_type']} not implemented!"
         )
 
     def __hash__(self):
@@ -117,6 +120,10 @@ class GeneticAlgorithmNN(GeneticAlgorithm):
         self.pretrained_weights = pretrained_weights \
             if os.path.isfile(pretrained_weights) else None
         if self.configs["workers"] and self.configs["workers"] > 1:
+            try:
+                mp.set_start_method('spawn')
+            except RuntimeError:
+                pass
             self.pool = mp.Pool(self.configs["workers"])
 
     def new_population(self, num):
@@ -142,27 +149,23 @@ class GeneticAlgorithmNN(GeneticAlgorithm):
             while len(self.population) < self.configs["num_parents"]:
                 network = self.NN_CLASS(self.configs)
                 network.load_state_dict(state_dict)
-                individual = self.INDIVIDUAL_CLASS(self.configs, self.NN_CLASS, network)
+                individual = self.INDIVIDUAL_CLASS(self.configs, self.NN_CLASS,
+                                                   network, calc_fitness=False)
                 individual.mutate()
-                individual.fitness = individual.calc_fitness()
+                individual.calc_fitness()
                 self.population.append(individual)
             self.configs["mutation_rate"] = old_mutation_rate
 
         self.population.extend(self.new_population(self.population_size - len(self.population)))
 
-    def selection(self):
-        parents = self.population[:self.num_parents]
-        return parents
-
     def crossover_and_mutation(self, population):
         children = []
         while True:
-            parent1 = random.choice(population)
-            parent2 = random.choice(population)
+            parent1, parent2 = random.sample(population, 2)
             for child in parent1.cross(parent2):
                 child.mutate()
                 # calculate fitness once for both cross and mutate, should be faster
-                child.fitness = child.calc_fitness()
+                child.calc_fitness()
                 children.append(child)
                 if len(children) >= self.population_size:
                     break

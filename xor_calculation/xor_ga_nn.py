@@ -49,7 +49,9 @@ class XorCalculationGANN(GeneticAlgorithmNN):
 if __name__ == "__main__":
     configs = {
         "population_size": 100,
-        "new_population": 50,
+        "new_population": 10,
+        "selection_method": "best_mid_worst",
+        "k_tournament": 5,
         "num_parents": 50,
         "mutation_type": "param",
         "mutation_rate": 0.05,

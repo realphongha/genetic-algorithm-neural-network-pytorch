@@ -1,4 +1,5 @@
 import time
+import random
 from abc import ABC, abstractmethod
 from typing import List
 
@@ -16,7 +17,7 @@ class Individual(ABC):
         self.mutation_strength = configs["mutation_strength"]
         # fitness means how good this solution is
         if chromosome:
-            self.fitness = self.calc_fitness()
+            self.calc_fitness()
         else:
             self.fitness = None
         self.debug = configs["debug"]
@@ -33,7 +34,7 @@ class Individual(ABC):
 
     @abstractmethod
     def calc_fitness(self):
-        # calculates this individual fitness
+        # calculates this individual fitness and set to self.fitness
         pass
 
     @abstractmethod
@@ -85,14 +86,41 @@ class GeneticAlgorithm(ABC):
         self.goat: Individual = None
 
     @abstractmethod
+    def new_population(self, num):
+        # quickly creates new population of `num` individuals
+        pass
+
+    @abstractmethod
     def init_population(self):
         # initializes population
         pass
 
-    @abstractmethod
     def selection(self):
         # selects some individuals to reproduce next generation
-        pass
+        if self.configs["selection_method"] == "best":
+            return self.population[:self.num_parents]
+        elif self.configs["selection_method"] == "best_worst":
+            num_best = int(self.num_parents / 2)
+            num_worst = self.num_parents - num_best
+            return self.population[:num_best] + self.population[-num_worst:]
+        elif self.configs["selection_method"] == "best_mid_worst":
+            num_best = int(self.num_parents / 3)
+            num_mid = int(self.num_parents / 3)
+            num_worst = self.num_parents - num_best - num_mid
+            mid_start_idx = int(len(self.population)/2 - num_mid/2)
+            return self.population[:num_best] + \
+                self.population[mid_start_idx:mid_start_idx+num_mid] + \
+                self.population[-num_worst:]
+        elif self.configs["selection_method"] == "tournament":
+            new_pop = []
+            while len(new_pop) < self.num_parents:
+                candidates = random.sample(self.population, self.configs["k_tournament"])
+                new_pop.append(max(candidates))
+            return new_pop
+        elif self.configs["selection_method"] == "random":
+            return random.sample(self.population, self.num_parents)
+        else:
+            raise NotImplementedError
 
     @abstractmethod
     def crossover_and_mutation(self, parents: List[Individual]):
@@ -139,6 +167,7 @@ class GeneticAlgorithm(ABC):
                 if not self.elitism:
                     self.population = children
                 else:
+                    self.population = self.population[:self.population_size]
                     self.population = self.population[int(self.elitism * self.population_size):] + children
                 latency = time.time() - start
                 running_latency.append(latency)

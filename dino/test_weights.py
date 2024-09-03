@@ -22,6 +22,5 @@ if __name__ == "__main__":
     configs["debug"] = True
     goat = DinoIndividualNN(configs, DinoNN, calc_fitness=False)
     goat.load_weights(args.weights)
-    score = goat.display()
-    print("Final score:", score)
+    goat.display()
 

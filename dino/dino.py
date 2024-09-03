@@ -93,9 +93,7 @@ class Dino:
         self.configs = configs
         self.w, self.h = configs["screen_size"]
         self.jump_power = configs["jump_power"]
-        self.acceleration = None
         self.gravity = configs["gravity"]
-        self.min_dist = self.w // 4  # min distance between cacti and birds
         self.dino_size = None
         self.dino = None  # dino position
         self.velocity_y = None  # dino vertical velocity
@@ -110,8 +108,8 @@ class Dino:
         self.dino_size = self.configs["dino_size"].copy()
         self.dino = np.array([50, self.h])
         self.velocity_y = 0
-        self.action_count = 0
         self.is_jumping = False
+        self.action_count = 0
         self.speed = self.configs["init_speed"]
         self.obstacle = Obstacle(self.configs)
         self.score = 0

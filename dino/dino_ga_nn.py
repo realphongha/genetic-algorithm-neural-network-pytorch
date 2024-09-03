@@ -14,18 +14,29 @@ class DinoIndividualNN(IndividualNN):
         self.simulation_times = configs["simulation_times"]
         super().__init__(configs, network_class, network, calc_fitness)
         # how many times to run simulation
+        self.simulation_times = configs["simulation_times"]
 
     @staticmethod
     def encode_current_position(game):
+        # inp = [
+        #     (game.h-game.dino[1]) / game.h, # dino y
+        #     game.dino_size[1] / game.h, # dino h
+        #     -game.velocity_y / game.h, # dino velocity by y
+        #     (game.obstacle.x - game.dino[0]) / game.w, # obstacle x
+        #     (game.h-game.obstacle.y) / game.h, # obstacle y
+        #     game.obstacle.w / game.w, # obstacle w
+        #     game.obstacle.h / game.h, # obstacle h
+        #     -game.speed / game.w # speed
+        # ]
         inp = [
-            (game.h-game.dino[1]) / game.h, # dino y
-            game.dino_size[1] / game.h, # dino h
-            game.velocity_y / game.h, # dino velocity by y
-            (game.obstacle.x - game.dino[0]) / game.w, # obstacle x
-            (game.h-game.obstacle.y) / game.h, # obstacle y
-            game.obstacle.w / game.w, # obstacle w
-            game.obstacle.h / game.h, # obstacle h
-            -game.speed / game.w # speed
+            (game.h-game.dino[1]), # dino y
+            game.dino_size[1], # dino h
+            -game.velocity_y, # dino velocity by y
+            (game.obstacle.x - game.dino[0]), # obstacle x
+            (game.h-game.obstacle.y), # obstacle y
+            game.obstacle.w, # obstacle w
+            game.obstacle.h, # obstacle h
+            -game.speed # speed
         ]
         return torch.tensor(inp).float()
 
@@ -41,15 +52,50 @@ class DinoIndividualNN(IndividualNN):
             return "no_action"
 
     def display(self):
-        print(f"Avg score: {self.fitness[0]}")
+        if self.fitness:
+            print(f"Avg score: {self.fitness[0]}")
         if self.debug:
             dino_game = Dino(self.configs["game"])
             dino_player = DinoPlayer(self.configs["game"])
             dino_player.game_loop(dino_game, self)
             return dino_game.score
-        return self.fitness[0]
 
+    @torch.no_grad()
     def calc_fitness(self):
+        all_scores = []
+        all_action_count = []
+        dino_games = [Dino(self.configs["game"]) for _ in range(self.simulation_times)]
+        ended = [False for _ in range(self.simulation_times)]
+
+        # run simulation using batch infer
+        while True:
+            batch = []
+            idxs = []
+            for i, dino_game in enumerate(dino_games):
+                if not ended[i]:
+                    batch.append(DinoIndividualNN.encode_current_position(dino_game))
+                    idxs.append(i)
+            if len(batch) == 0:
+                break
+            batch = torch.stack(batch).to(self.device)
+            prob = self.chromosome(batch).softmax(1)
+            for i, idx in enumerate(idxs):
+                action = prob[i].argmax(0).item()
+                if action == 1:
+                    dino_games[idx].stand()
+                    dino_games[idx].jump()
+                elif action == 2:
+                    dino_games[idx].duck()
+                else: # == 0
+                    dino_games[idx].stand()
+                if dino_games[idx].update() != Dino.GAME_RUNNING:
+                    ended[idx] = True
+
+        all_scores = [game.score for game in dino_games]
+        all_action_count = [game.action_count for game in dino_games]
+        self.fitness = (np.average(all_scores), np.average(all_action_count))
+
+    def calc_fitness_single_thread(self):
         all_scores = []
         all_action_count = []
         dino_game = Dino(self.configs["game"])
@@ -70,10 +116,11 @@ class DinoIndividualNN(IndividualNN):
 
             all_scores.append(dino_game.score)
             all_action_count.append(dino_game.action_count)
-        return np.average(all_scores), np.average(all_action_count)
+        self.fitness = (np.average(all_scores), np.average(all_action_count))
 
     def __lt__(self, other):
         if self.fitness[0] == other.fitness[0]:
+            # if same score, prioritize less action count
             return self.fitness[1] > other.fitness[1]
         return self.fitness[0] < other.fitness[0]
 

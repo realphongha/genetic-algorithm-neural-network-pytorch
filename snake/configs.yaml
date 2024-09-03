@@ -1,5 +1,7 @@
 population_size: 1000
-new_population: 500
+new_population: 100
+selection_method: tournament
+k_tournament: 5
 num_parents: 700
 mutation_type: param
 mutation_rate: 0.05

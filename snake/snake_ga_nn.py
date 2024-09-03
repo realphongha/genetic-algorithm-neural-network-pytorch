@@ -135,7 +135,7 @@ class SnakeIndividualNN(IndividualNN):
                     break
             all_scores.append(len(snake_game.snake))
             all_turnes.append(turns)
-        return np.average(all_scores), np.average(all_turnes)
+        self.fitness = (np.average(all_scores), np.average(all_turnes))
 
     def __lt__(self, other):
         if self.fitness[0] == other.fitness[0]:

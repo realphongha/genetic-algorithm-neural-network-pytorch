@@ -17,4 +17,3 @@ calculate XOR operation.
 - To train the bot:  
 `python -m dino.dino_ga_nn`
 - To test the trained model: `python -m dino.test_weights`
-- Note: Training process will take about 120 generations to converge (so a lot of time), be patient :)
