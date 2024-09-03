@@ -9,11 +9,26 @@ with neural networks.
 # Xor calculation
 - A simple example for genetic algorithm neural network to 
 calculate XOR operation.
-- To run: `python -m xor_calculation.xor_ga_nn`
+- To train the model: 
+```bash
+python train.py --game xor --cfg xor_calculation/configs.yaml
+```
+- To test the model:
+```bash
+python test.py --game xor --cfg xor_calculation/configs.yaml --weights weights/xor/best.pth
+```
 
 # Dino bot
 - A bot to play Chrome Dino game with genetic algorithm neural network.
-- To play the Dino game by yourself: `python -m dino.dino`
-- To train the bot:  
-`python -m dino.dino_ga_nn`
-- To test the trained model: `python -m dino.test_weights`
+- To play the Dino game by yourself:
+```bash
+python -m dino.dino
+```
+- To test our pre-trained model:
+```bash
+python test.py --game dino --weights weights/dino.pth --cfg dino/configs.yaml
+```
+- To train the bot:
+```bash
+python train.py --game dino --cfg dino/configs.yaml --no-debug
+```

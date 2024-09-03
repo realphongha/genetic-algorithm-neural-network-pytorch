@@ -8,8 +8,7 @@ class XorNN(nn.Module):
     def __init__(self, configs):
         super().__init__()
         self.fc1 = nn.Linear(2, 4)
-        self.fc2 = nn.Linear(4, 4)
-        self.fc3 = nn.Linear(4, 2)
+        self.fc2 = nn.Linear(4, 2)
 
     def init_weights(self, a=-1.0, b=1.0):
         for m in self.modules():
@@ -17,10 +16,11 @@ class XorNN(nn.Module):
                 # Initialize weights with a normal distribution (mean=0, std=1)
                 nn.init.uniform_(m.weight, a=a, b=b)
                 nn.init.uniform_(m.bias, a=a, b=b)
+                # Initialize biases with zeros
+                # nn.init.zeros_(m.bias)
 
     def forward(self, x):
         x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = F.softmax(self.fc3(x), dim=-1)
+        x = F.softmax(self.fc2(x), dim=-1)
         return x
 

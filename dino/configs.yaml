@@ -27,7 +27,6 @@ game:
       y: [31, 120]
       w: [20, 40]
       h: [20, 80]
-
   jump_power: -15
   duck_height: 30
   gravity: 1

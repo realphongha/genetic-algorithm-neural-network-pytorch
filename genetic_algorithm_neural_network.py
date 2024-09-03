@@ -53,8 +53,6 @@ class IndividualNN(Individual):
             self.calc_fitness()
 
     def save_weights(self, file_name):
-        if not os.path.isdir(self.configs["save_path"]):
-            return
         os.makedirs(self.configs["save_path"], exist_ok=True)
         torch.save(
             self.chromosome.state_dict(),
@@ -176,7 +174,8 @@ class GeneticAlgorithmNN(GeneticAlgorithm):
     def loop_callback(self, greatest_of_this_gen):
         if greatest_of_this_gen > self.goat:
             greatest_of_this_gen.save_weights("best.pth")
-            print("Saved weights to best.pth")
+            print(f"Saved weights to {os.path.join(self.configs['save_path'], 'best.pth')}")
+
         greatest_of_this_gen.save_weights("last.pth")
-        print("Saved weights to last.pth")
+        print(f"Saved weights to {os.path.join(self.configs['save_path'], 'last.pth')}")
 

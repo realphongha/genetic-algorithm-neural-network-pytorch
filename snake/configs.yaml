@@ -1,20 +1,18 @@
-population_size: 1000
+population_size: 200
 new_population: 100
 selection_method: tournament
-k_tournament: 5
-num_parents: 700
+k_tournament: 10
+num_parents: 100
 mutation_type: param
 mutation_rate: 0.05
 mutation_strength: 0.2
 elitism: 0.05
-max_gen: 1000
+max_gen: 200
 simulation_times: 10
 device: "cuda"
 workers: 4
 debug: False
-save_path: "./weights/snake.pth"
-train: True
-test: False
+save_path: "./weights/snake/"
 game:
   board_size: [8, 8]
   visualize:

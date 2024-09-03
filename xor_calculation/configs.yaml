@@ -1,0 +1,14 @@
+population_size: 200
+new_population: 100
+selection_method: tournament
+k_tournament: 10
+num_parents: 100
+mutation_type: layer
+mutation_rate: 0.05
+mutation_strength: 0.2
+elitism:
+max_gen: 200
+device: "cpu"
+workers: 4
+debug: True
+save_path: "./weights/xor/"

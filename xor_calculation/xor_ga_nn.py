@@ -32,7 +32,7 @@ class XorIndividualNN(IndividualNN):
         conf += res[1][1].item()
         conf += res[2][1].item()
         conf += res[3][0].item()
-        return conf
+        self.fitness = conf
 
 
 class XorCalculationGANN(GeneticAlgorithmNN):
@@ -44,28 +44,4 @@ class XorCalculationGANN(GeneticAlgorithmNN):
 
     def can_terminate(self, evolved, gen):
         return gen >= self.max_gen
-
-
-if __name__ == "__main__":
-    configs = {
-        "population_size": 100,
-        "new_population": 10,
-        "selection_method": "best_mid_worst",
-        "k_tournament": 5,
-        "num_parents": 50,
-        "mutation_type": "param",
-        "mutation_rate": 0.05,
-        "mutation_strength": 0.1,
-        "elitism": 0.1,
-        "max_gen": 500,
-        "device": "cuda" if torch.cuda.is_available() else "cpu",
-        "workers": 4,
-        "save_path": "./weights/xor",
-        "debug": True
-    }
-    xor = XorCalculationGANN(configs)
-    xor.run()
-    goat = XorIndividualNN(configs, XorNN)
-    goat.load_weights("./weights/xor/best.pth")
-    goat.display()
 

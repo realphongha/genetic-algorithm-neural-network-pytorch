@@ -1,6 +1,3 @@
-import yaml
-import argparse
-
 import torch
 import numpy as np
 
@@ -11,10 +8,9 @@ from dino.dino import DinoPlayer, Dino
 
 class DinoIndividualNN(IndividualNN):
     def __init__(self, configs, network_class, network=None, calc_fitness=True):
-        self.simulation_times = configs["simulation_times"]
-        super().__init__(configs, network_class, network, calc_fitness)
         # how many times to run simulation
         self.simulation_times = configs["simulation_times"]
+        super().__init__(configs, network_class, network, calc_fitness)
 
     @staticmethod
     def encode_current_position(game):
@@ -135,26 +131,4 @@ class DinoGANN(GeneticAlgorithmNN):
     def can_terminate(self, evolved, gen):
         return gen >= self.max_gen or self.goat.fitness[0] >= self.configs["game"]["win_score"]
 
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--cfg',
-                        type=str,
-                        default='dino/configs.yaml',
-                        help='path to configs file')
-    parser.add_argument('--weights',
-                        type=str,
-                        default='',
-                        help='Path to pre-trained weights file')
-    parser.add_argument('--debug', dest='debug', action='store_true')
-    parser.add_argument('--no-debug', dest='debug', action='store_false')
-    parser.set_defaults(debug=True)
-    args = parser.parse_args()
-    configs = yaml.load(open(args.cfg), Loader=yaml.FullLoader)
-    if configs["device"] == "cuda" and not torch.cuda.is_available():
-        configs["device"] = "cpu"
-    configs["debug"] = args.debug
-    print("Training Dino bot...")
-    dino = DinoGANN(configs, args.weights)
-    dino.run()
 
