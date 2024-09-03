@@ -1,6 +1,8 @@
 import argparse
 import yaml
 
+import torch
+
 from dino import DinoGANN
 from snake import SnakeGANN
 from xor_calculation import XorCalculationGANN
