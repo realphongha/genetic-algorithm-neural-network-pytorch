@@ -20,7 +20,7 @@ python test.py --game xor --cfg xor_calculation/configs.yaml --weights weights/x
 
 # Dino bot
 - A bot to play the Chrome Dino game with genetic algorithm neural network.
-- If train correctly this bot can play the game perfectly.
+- After being trained this bot can play the game near perfectly.
 - To play the Dino game by yourself:
 ```bash
 python -m dino.dino
