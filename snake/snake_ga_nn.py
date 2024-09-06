@@ -21,83 +21,41 @@ class SnakeIndividualNN(IndividualNN):
     }
 
     def __init__(self, configs, network_class, network=None, calc_fitness=True):
+        # how many times to run simulation
         self.simulation_times = configs["simulation_times"]
         super().__init__(configs, network_class, network, calc_fitness)
-        # how many times to run simulation
-
-    @staticmethod
-    def encode_current_position2(game):
-        w, h = game.w, game.h
-        food = game.food
-        head = game.snake[-1]
-        previous_head = game.snake[-2]
-        tail = game.snake[0]
-        snake_length = len(game.snake)
-        inp = [
-            1/w, 1/h,
-            food[0]/w, food[1]/h,
-            head[0]/w, head[1]/h,
-            previous_head[0]/w, previous_head[1]/h,
-            tail[0]/w, tail[1]/h,
-            snake_length / w / h
-        ]
-
-        inp = torch.tensor(inp).float()
-        return inp
-
-    @staticmethod
-    def encode_current_position1(game):
-        w, h = game.w, game.h
-        food = game.food[1]*w + game.food[0]
-        head = game.snake[-1][1]*w + game.snake[-1][0]
-        head2 = game.snake[-2][1]*w + game.snake[-2][0]
-        head3 = game.snake[-3][1]*w + game.snake[-3][0]
-        tail = game.snake[0][1]*w + game.snake[0][0]
-        snake_len = len(game.snake)
-        inp = [
-            w, h, tail, head3, head2, head, food, snake_len
-        ]
-        # inp = [
-        #     w, h, # board size
-        #     game.food[1]*w + game.food[0],  # food
-        #     game.snake[-1][1]*w + game.snake[-1][0],  # head
-        #     game.snake[0][1]*w + game.snake[0][0],  # tail
-        #     len(game.snake)  # snake length
-        # ]
-        inp = torch.tensor(inp).float()
-        # normalize by board size
-        return (inp-(w*h)/2) / w / h
 
     @staticmethod
     def encode_current_position(game):
-        # encode the entire board, each row as an number
-        w, h = game.w, game.h
-        # empty cell - encoded as 0
-        inp = torch.zeros(h)
-        # snake segments - encoded as 1
-        for x, y in game.snake[:-1]:
-            inp[y] += 4 ** x
-        # snake head - encoded as 2
-        x, y = game.snake[-1]
-        inp[y] += 2 * (4 ** x)
-        # food - encoded as 3
-        x, y = game.food
-        inp[y] += 3 * (4 ** x)
         head = game.snake[-1]
-        # normalize input
-        inp /= 4 ** w
-        return inp
+        food = game.food
+        # add turn points in snake
+        inp = [
+            head[0]-food[0], head[1]-food[1], # food
+            0, 0, 0, 0 # is there any danger on 4 adjacent cells
+        ]
+        if head[0] == 0 or (head[0]-1, head[1]) in game.snake:
+            inp[-4] = 1
+        if head[0] == game.w-1 or (head[0]+1, head[1]) in game.snake:
+            inp[-3] = 1
+        if head[1] == 0 or (head[0], head[1]-1) in game.snake:
+            inp[-2] = 1
+        if head[1] == game.h-1 or (head[0], head[1]+1) in game.snake:
+            inp[-1] = 1
+        return torch.tensor(inp).float()
 
     @torch.no_grad()
     def get_action(self, game):
         prob = self.chromosome(SnakeIndividualNN.encode_current_position(game).to(self.device))
         direction = prob.argmax(0).item()
-        if direction == 0: # go ahead
-            return game.velocity
-        elif direction == 1:  # turn left
-            return SnakeIndividualNN.TURN_LEFT[game.velocity]
-        else:  # direction == 2:  # turn right
-            return SnakeIndividualNN.TURN_RIGHT[game.velocity]
+        if direction == 0:
+            return (1, 0)
+        elif direction == 1:
+            return (0, 1)
+        elif direction == 2:
+            return (-1, 0)
+        else:
+            return (0, -1)
 
     def display(self):
         if self.debug:
@@ -111,28 +69,35 @@ class SnakeIndividualNN(IndividualNN):
         print(f"Avg length: {self.fitness[0]}, Avg turns: {self.fitness[1]}")
 
     def calc_fitness(self):
-        all_scores = []
-        all_turnes = []
-        for _ in range(self.simulation_times):
-            snake_game = SnakeGame(self.configs["game"]["board_size"])
-            res = SnakeGame.GAME_RUNNING
-            turns = -1
-            turns_without_food = 0
-            last_len = len(snake_game.snake)
-            while res == SnakeGame.GAME_RUNNING:
-                turns += 1
-                snake_game.velocity = self.get_action(snake_game)
-                res = snake_game.update()
-                if len(snake_game.snake) == last_len:
-                    turns_without_food += 1
+        games = [SnakeGame(self.configs["game"]["board_size"]) for _ in range(self.simulation_times)]
+        ended = [False for _ in range(self.simulation_times)]
+
+        while True:
+            batch = []
+            idxs = []
+            for i, game in enumerate(games):
+                if not ended[i]:
+                    batch.append(SnakeIndividualNN.encode_current_position(game))
+                    idxs.append(i)
+            if len(batch) == 0:
+                break
+            batch = torch.stack(batch).to(self.device)
+            prob = self.chromosome(batch).softmax(1)
+            for i, idx in enumerate(idxs):
+                action = prob[i].argmax(0).item()
+                if action == 0:
+                    games[idx].velocity = (1, 0)
+                elif action == 1:
+                    games[idx].velocity = (0, 1)
+                elif action == 2:
+                    games[idx].velocity = (-1, 0)
                 else:
-                    turns_without_food = 0
-                    last_len = len(snake_game.snake)
-                if turns_without_food > snake_game.w + snake_game.h:
-                    break
-            all_scores.append(len(snake_game.snake))
-            all_turnes.append(turns)
-        self.fitness = (np.average(all_scores), np.average(all_turnes))
+                    games[idx].velocity = (0, -1)
+                if games[idx].update() != SnakeGame.GAME_RUNNING:
+                    ended[idx] = True
+        all_scores = [len(game.snake) for game in games]
+        all_turns = [game.turns for game in games]
+        self.fitness = (np.mean(all_scores), np.mean(all_turns))
 
     def __lt__(self, other):
         if self.fitness[0] == other.fitness[0]:
@@ -148,5 +113,6 @@ class SnakeGANN(GeneticAlgorithmNN):
         super().__init__(configs, pretrained_weights)
 
     def can_terminate(self, evolved, gen):
-        return gen >= self.max_gen
+        return gen >= self.max_gen or \
+            self.goat.fitness[0] >= self.configs["game"]["board_size"][0] * self.configs["game"]["board_size"][1]
 

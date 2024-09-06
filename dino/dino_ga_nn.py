@@ -58,8 +58,6 @@ class DinoIndividualNN(IndividualNN):
 
     @torch.no_grad()
     def calc_fitness(self):
-        all_scores = []
-        all_action_count = []
         dino_games = [Dino(self.configs["game"]) for _ in range(self.simulation_times)]
         ended = [False for _ in range(self.simulation_times)]
 

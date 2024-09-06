@@ -7,11 +7,10 @@ class SnakeNN(nn.Module):
     # chromosome for snake game bot
     def __init__(self, configs):
         super().__init__()
-        self.configs = configs
-        w, h = configs["game"]["board_size"]
-        self.fc1 = nn.Linear(h, h)
-        self.fc2 = nn.Linear(h, h)
-        self.fc3 = nn.Linear(h, 3)
+        # self.configs = configs
+        # w, h = configs["game"]["board_size"]
+        self.fc1 = nn.Linear(6, 6)
+        self.fc2 = nn.Linear(6, 4)
 
     def init_weights(self, a=-1.0, b=1.0):
         for m in self.modules():
@@ -24,7 +23,6 @@ class SnakeNN(nn.Module):
 
     def forward(self, x):
         x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = F.softmax(self.fc3(x), dim=-1)
+        x = F.softmax(self.fc2(x), dim=-1)
         return x
 

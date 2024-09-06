@@ -83,8 +83,17 @@ class IndividualNN(Individual):
         flat[idx] = random.uniform(self.uniform_a, self.uniform_b)
         return True
 
+    def mutate_param_add(self):
+        if random.random() > self.mutation_rate:
+            return False
+        params = random.choice(list(self.chromosome.parameters()))
+        flat = params.data.view(-1)
+        idx = random.randint(0, flat.shape[0] - 1)
+        flat[idx] += np.random.normal(0, self.mutation_strength)
+        return True
 
-    def mutate_layer(self):
+
+    def mutate_layer_add(self):
         mutated = False
         for p in self.chromosome.parameters():
             if random.random() > self.mutation_rate:
@@ -96,10 +105,12 @@ class IndividualNN(Individual):
         return mutated
 
     def mutate(self):
-        if self.configs["mutation_type"] == "layer":
-            return self.mutate_layer()
+        if self.configs["mutation_type"] == "layer_add":
+            return self.mutate_layer_add()
         elif self.configs["mutation_type"] == "param":
             return self.mutate_param()
+        elif self.configs["mutation_type"] == "param_add":
+            return self.mutate_param_add()
         raise NotImplementedError(
             f"{self.configs['mutation_type']} not implemented!"
         )

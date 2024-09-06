@@ -1,4 +1,5 @@
 import random
+from collections import deque
 from typing import Optional
 
 import numpy as np
@@ -141,17 +142,21 @@ class SnakeGame:
         self.w, self.h = board_size
         assert self.w >= 8, "Board width should be larger than 8"
         assert self.h >= 8, "Board height should be larger than 8"
-        self.board = np.zeros((self.h, self.w), dtype=np.ubyte)
         self.snake = None
         self.velocity = None
         self.food = None
+        self.turns = None
+        self.turns_without_food = None
         self.init_new_game()
 
     def init_new_game(self):
-        self.snake = [(self.w//2-2, self.h//2),
-                      (self.w//2-1, self.h//2),
-                      (self.w//2, self.h//2)]
+        self.snake = deque([(self.w//2-2, self.h//2),
+                            (self.w//2-1, self.h//2),
+                            (self.w//2, self.h//2)])
         self.velocity = (1, 0)
+        self.turns = 0
+        self.turns_without_food = 0
+        self.food = None
         self.spawn_food()
 
     def spawn_food(self):
@@ -162,6 +167,7 @@ class SnakeGame:
                          np.random.randint(0, self.h))
 
     def update(self):
+        self.turns += 1
         head = self.snake[-1]
         new_head = (head[0] + self.velocity[0], head[1] + self.velocity[1])
         if new_head[0] < 0 or new_head[0] >= self.w or \
@@ -170,13 +176,17 @@ class SnakeGame:
         elif new_head in self.snake:
             return SnakeGame.GAME_OVER
         elif new_head == self.food:
+            self.turns_without_food = 0
             self.snake.append(new_head)
             if len(self.snake) == self.w * self.h:
                 return SnakeGame.GAME_WON
             self.spawn_food()
         else:
-            self.snake = self.snake[1:]
+            self.snake.popleft()
             self.snake.append(new_head)
+            self.turns_without_food += 1
+            if self.turns_without_food > self.w * self.h:
+                return SnakeGame.GAME_OVER
         return SnakeGame.GAME_RUNNING
 
 
