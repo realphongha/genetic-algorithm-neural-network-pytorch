@@ -170,19 +170,22 @@ class SnakeGame:
         self.turns += 1
         head = self.snake[-1]
         new_head = (head[0] + self.velocity[0], head[1] + self.velocity[1])
+        tail = self.snake.popleft()
         if new_head[0] < 0 or new_head[0] >= self.w or \
             new_head[1] < 0 or new_head[1] >= self.h:
+            self.snake.appendleft(tail)
             return SnakeGame.GAME_OVER
         elif new_head in self.snake:
+            self.snake.appendleft(tail)
             return SnakeGame.GAME_OVER
         elif new_head == self.food:
             self.turns_without_food = 0
             self.snake.append(new_head)
+            self.snake.appendleft(tail)
             if len(self.snake) == self.w * self.h:
                 return SnakeGame.GAME_WON
             self.spawn_food()
         else:
-            self.snake.popleft()
             self.snake.append(new_head)
             self.turns_without_food += 1
             if self.turns_without_food > self.w * self.h:

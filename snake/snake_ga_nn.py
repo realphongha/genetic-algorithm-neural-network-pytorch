@@ -29,33 +29,33 @@ class SnakeIndividualNN(IndividualNN):
     def encode_current_position(game):
         head = game.snake[-1]
         food = game.food
-        # add turn points in snake
+        # TODO: add turn points in snake
         inp = [
-            head[0]-food[0], head[1]-food[1], # food
-            0, 0, 0, 0 # is there any danger on 4 adjacent cells
+            head[0]-food[0], head[1]-food[1] # food
         ]
-        if head[0] == 0 or (head[0]-1, head[1]) in game.snake:
-            inp[-4] = 1
-        if head[0] == game.w-1 or (head[0]+1, head[1]) in game.snake:
-            inp[-3] = 1
-        if head[1] == 0 or (head[0], head[1]-1) in game.snake:
-            inp[-2] = 1
-        if head[1] == game.h-1 or (head[0], head[1]+1) in game.snake:
-            inp[-1] = 1
-        return torch.tensor(inp).float()
+        # is there any danger on 4 adjacent cells
+        # pop the tail because the tail will move out in the next turn
+        tail = game.snake.popleft()
+        inp.append(head[0] == 0 or ((head[0]-1, head[1]) in game.snake))
+        inp.append(head[0] == game.w-1 or ((head[0]+1, head[1]) in game.snake))
+        inp.append(head[1] == 0 or ((head[0], head[1]-1) in game.snake))
+        inp.append(head[1] == game.h-1 or ((head[0], head[1]+1) in game.snake))
+        inp = torch.tensor(inp).float()
+        game.snake.appendleft(tail)
+        return inp
 
     @torch.no_grad()
     def get_action(self, game):
         prob = self.chromosome(SnakeIndividualNN.encode_current_position(game).to(self.device))
         direction = prob.argmax(0).item()
         if direction == 0:
-            return (1, 0)
-        elif direction == 1:
-            return (0, 1)
-        elif direction == 2:
             return (-1, 0)
-        else:
+        elif direction == 1:
+            return (1, 0)
+        elif direction == 2:
             return (0, -1)
+        else:
+            return (0, 1)
 
     def display(self):
         if self.debug:
@@ -66,7 +66,8 @@ class SnakeIndividualNN(IndividualNN):
                 self.configs["game"]["visualize"]["fps"],
             )
             snake_player.game_loop(snake_game, self)
-        print(f"Avg length: {self.fitness[0]}, Avg turns: {self.fitness[1]}")
+        if self.fitness:
+            print(f"Avg length: {self.fitness[0]}, Avg turns: {self.fitness[1]}")
 
     def calc_fitness(self):
         games = [SnakeGame(self.configs["game"]["board_size"]) for _ in range(self.simulation_times)]
@@ -86,13 +87,13 @@ class SnakeIndividualNN(IndividualNN):
             for i, idx in enumerate(idxs):
                 action = prob[i].argmax(0).item()
                 if action == 0:
-                    games[idx].velocity = (1, 0)
-                elif action == 1:
-                    games[idx].velocity = (0, 1)
-                elif action == 2:
                     games[idx].velocity = (-1, 0)
-                else:
+                elif action == 1:
+                    games[idx].velocity = (1, 0)
+                elif action == 2:
                     games[idx].velocity = (0, -1)
+                else:
+                    games[idx].velocity = (0, 1)
                 if games[idx].update() != SnakeGame.GAME_RUNNING:
                     ended[idx] = True
         all_scores = [len(game.snake) for game in games]
