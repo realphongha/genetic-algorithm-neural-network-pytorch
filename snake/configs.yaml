@@ -10,9 +10,9 @@ elitism: 0.05
 max_gen: 1000
 simulation_times: 20
 device: "cpu"
-workers: 4
+workers: 1
 debug: False
-save_path: "./weights/snake/"
+save_path: "./weights/snake_super/"
 game:
   board_size: [8, 8]
   visualize:

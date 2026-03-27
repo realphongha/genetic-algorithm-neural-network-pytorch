@@ -7,10 +7,10 @@ mutation_type: param
 mutation_rate: 0.05
 mutation_strength: 0.2
 elitism: 0.05
-max_gen: 200
+max_gen: 20
 simulation_times: 20
 device: "cpu"
-workers: 8
+workers: 4
 debug: False
 save_path: "./weights/dino/"
 game:

@@ -167,8 +167,9 @@ class GeneticAlgorithm(ABC):
                 if not self.elitism:
                     self.population = children
                 else:
-                    self.population = self.population[:self.population_size]
-                    self.population = self.population[int(self.elitism * self.population_size):] + children
+                    self.population.sort(reverse=True)
+                    self.population = self.population[:int(self.elitism * self.population_size)] + \
+                                      children[:self.population_size - int(self.elitism * self.population_size)]
                 latency = time.time() - start
                 running_latency.append(latency)
                 print("Time: %.4f (s)" % latency)

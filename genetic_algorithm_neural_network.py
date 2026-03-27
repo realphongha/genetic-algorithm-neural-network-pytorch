@@ -17,12 +17,31 @@ def model_to_chromosome(model):
 
 
 def chromosome_to_model(chromosome, model):
-    chromosome = torch.tensor(chromosome).cuda()
+    device = next(model.parameters()).device
+    chromosome = torch.tensor(chromosome).to(device)
     start = 0
     for param in model.parameters():
         param_size = param.numel()
         param.data = chromosome[start:start+param_size].view(param.shape).float()
         start += param_size
+
+
+def _create_mutated(configs, nn_class, individual_class, state_dict):
+    net = nn_class(configs)
+    net.load_state_dict(state_dict)
+    ind = individual_class(configs, nn_class, net, calc_fitness=False)
+    ind.mutate()
+    ind.calc_fitness()
+    return ind
+
+
+def _cross_mutate_fitness(p1, p2):
+    res = []
+    for child in p1.cross(p2):
+        child.mutate()
+        child.calc_fitness()
+        res.append(child)
+    return res
 
 
 class IndividualNN(Individual):
@@ -64,15 +83,17 @@ class IndividualNN(Individual):
         self.chromosome.init_weights(self.uniform_a, self.uniform_b)
 
     def cross(self, other):
-        child_net = self.network_class(self.configs)
-        for p1, p2, c in zip(
-            self.chromosome.parameters(), other.chromosome.parameters(), child_net.parameters()
+        child_net1 = self.network_class(self.configs)
+        child_net2 = self.network_class(self.configs)
+        for p1, p2, c1, c2 in zip(
+            self.chromosome.parameters(), other.chromosome.parameters(),
+            child_net1.parameters(), child_net2.parameters()
         ):
-            if random.random() < 0.5:
-                c.data = p1.data.clone()
-            else:
-                c.data = p2.data.clone()
-        yield self.__class__(self.configs, self.network_class, child_net, calc_fitness=False)
+            mask = torch.rand(p1.shape).to(self.device) < 0.5
+            c1.data = torch.where(mask, p1.data, p2.data).clone()
+            c2.data = torch.where(mask, p2.data, p1.data).clone()
+        yield self.__class__(self.configs, self.network_class, child_net1, calc_fitness=False)
+        yield self.__class__(self.configs, self.network_class, child_net2, calc_fitness=False)
 
     def mutate_param(self):
         if random.random() > self.mutation_rate:
@@ -116,7 +137,8 @@ class IndividualNN(Individual):
         )
 
     def __hash__(self):
-        return hash(model_to_chromosome(self.chromosome))
+        # use a faster hashing method, or just use the id of the chromosome
+        return id(self.chromosome)
 
 
 class GeneticAlgorithmNN(GeneticAlgorithm):
@@ -148,39 +170,48 @@ class GeneticAlgorithmNN(GeneticAlgorithm):
     def init_population(self):
         if self.pretrained_weights:
             # if load pretrained weights
-            old_mutation_rate = self.configs["mutation_rate"]
-            self.configs["mutation_rate"] = 1.0
             state_dict = torch.load(self.pretrained_weights)
             network = self.NN_CLASS(self.configs)
             network.load_state_dict(state_dict)
             individual = self.INDIVIDUAL_CLASS(self.configs, self.NN_CLASS, network)
             self.population.append(individual)
-            while len(self.population) < self.configs["num_parents"]:
-                network = self.NN_CLASS(self.configs)
-                network.load_state_dict(state_dict)
-                individual = self.INDIVIDUAL_CLASS(self.configs, self.NN_CLASS,
-                                                   network, calc_fitness=False)
-                individual.mutate()
-                individual.calc_fitness()
-                self.population.append(individual)
-            self.configs["mutation_rate"] = old_mutation_rate
+
+            num_to_create = self.configs["num_parents"] - len(self.population)
+            if num_to_create > 0:
+                if self.configs["workers"] and self.configs["workers"] > 1:
+                    mutated_indivs = self.pool.starmap(
+                        _create_mutated,
+                        [(self.configs, self.NN_CLASS, self.INDIVIDUAL_CLASS, state_dict) 
+                         for _ in range(num_to_create)]
+                    )
+                else:
+                    mutated_indivs = [_create_mutated(self.configs, self.NN_CLASS, self.INDIVIDUAL_CLASS, state_dict) 
+                                      for _ in range(num_to_create)]
+                self.population.extend(mutated_indivs)
 
         self.population.extend(self.new_population(self.population_size - len(self.population)))
 
     def crossover_and_mutation(self, population):
-        children = []
-        while True:
-            parent1, parent2 = random.sample(population, 2)
-            for child in parent1.cross(parent2):
-                child.mutate()
-                # calculate fitness once for both cross and mutate, should be faster
-                child.calc_fitness()
-                children.append(child)
-                if len(children) >= self.population_size:
-                    break
-            if len(children) >= self.population_size:
-                break
-        return children
+        if not self.configs["workers"] or self.configs["workers"] <= 1:
+            children = []
+            while len(children) < self.population_size:
+                parent1, parent2 = random.sample(population, 2)
+                for child in parent1.cross(parent2):
+                    child.mutate()
+                    child.calc_fitness()
+                    children.append(child)
+                    if len(children) >= self.population_size:
+                        break
+            return children
+
+        # Multiprocessing
+        pairs = []
+        while len(pairs) * 2 < self.population_size:
+            pairs.append(random.sample(population, 2))
+
+        results = self.pool.starmap(_cross_mutate_fitness, pairs)
+        children = [child for sublist in results for child in sublist]
+        return children[:self.population_size]
 
     def loop_callback(self, greatest_of_this_gen):
         if greatest_of_this_gen > self.goat:
